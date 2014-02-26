@@ -10,4 +10,4 @@
 # 
 # NOTES:
 #   D == 1 is relatively rare
-#   G == 4 is relatively rare
+#   G == 4 is relatively rare 
