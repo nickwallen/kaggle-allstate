@@ -1,7 +1,15 @@
 library (data.table)
 
 
+
+#
+# loads and cleans the competition data.  the function defaults to
+# loading the training data.  the test data can be loaded by supplying
+# the 'path' argument.
+#
 fetch <- function (path = "../../data/train.csv.zip") {
+  require (data.table)
+  require (lubridate)
   
   # unzip and load the training data
   data.csv <- unzip(path, exdir = tempdir())
@@ -17,7 +25,7 @@ fetch <- function (path = "../../data/train.csv.zip") {
     customer.id    = as.character (customer.id),
     shopping.pt    = as.factor (shopping.pt),
     record.type    = as.factor (record.type),
-    day.of.week    = wday (day.of.week + 1, label = T, abbr = T),
+    day.of.week    = wday (day.of.week, label = T, abbr = T),
     state          = as.factor (state),
     location       = as.factor (location),
     risk.factor    = as.factor (risk.factor),
@@ -36,3 +44,22 @@ fetch <- function (path = "../../data/train.csv.zip") {
   )]
   
 }
+
+#
+# converts a numeric representation of the day of week to an 
+# abbreviated string.  hint: 0 = "Mon".  this function redefines
+# the numeric implementation for the generatic function lubridate::wday.
+#
+wday.numeric <- function(x, label = FALSE, abbr = TRUE) {
+  if (!label) 
+    return (x)
+  
+  labels <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+  if (abbr) {
+    labels <- substr (labels, 1, 3)
+  }
+  
+  ordered(x, levels = 0:6, labels = labels)
+}
+
+
