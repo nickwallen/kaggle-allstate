@@ -18,5 +18,6 @@ Frequency of Each Product Variation
 train[, product := paste0(option.a,option.b,option.c,option.d,option.e,option.f,option.g)]
 ct.prod <- train[, list(ct = length(customer.id)),by=product]
 ggplot(ct.prod,aes(ct))+geom_histogram()
+ggplot(ct.prod,aes(ct))+stat_ecdf()
 
 ```
