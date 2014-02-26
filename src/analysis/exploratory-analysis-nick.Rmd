@@ -37,8 +37,7 @@ The 'shopping.pnt' field is incremented each time the customer shops or purchase
 For example, here is a customer who had 9 contacts with the insurance company before purchasing a policy.
 
 ```{r explore.shopping.pnt}
-train [ customer.id == "10000000", 
-        list (customer.id, shopping.pt, record.type, day.of.week, time.of.day )]
+train [ customer.id == "10000000" ]
 ```
 
 ### Q. How many times does the typical customer interact with Allstate before purchasing a policy?
@@ -69,5 +68,35 @@ ggplot (train, aes(time.of.day.mins)) + geom_density()
 ggplot (train, aes(time.of.day.mins)) + geom_density() + facet_wrap( ~ day.of.week, ncol = 4)
 ```
 
+### Q. A product is composed of a unique selection of the 7 options.  There are 2,304 unique products (3*2*4*3*2*4*4).
+
+```{r}
+train[, product := paste0 (option.a, option.b, option.c, option.d, option.e, option.f, option.g)]
+```
+
+There are only 1,809 of the 2,304 products in the training set.
+
+```{r}
+length (unique (train$product))
+```
+
+### Q. We know that cost is a major driver of consumer choices.  If we can attribute a cost for each option choice, we should be able to make some fairly accurate predictions.
+
+```{r}
+
+library (reshape2)
+train.melted <- train [, list (customer.id, cost, option.a, option.b, option.c, option.d, option.e, option.f, option.g)]
+train.melted <- data.table (melt (train.melted, id.vars = c("customer.id", "cost")))
+
+# TODO - why is this not working?
+# transform the data from wide to long for plotting
+#train.melted <- train [, list (customer.id, cost, option.a, option.b, option.c, option.d, option.e, option.f, option.g)]
+#train.melted <- train [, list ( option.name  = as.factor (names (.SD)), option.value = unlist(.SD, use.names = F)), by = list (customer.id, cost) ]
+
+limits <- quantile (train.melted$cost, c(0.01, 0.99))
+
+p <- ggplot (train.melted, aes (value, cost, fill = value))
+p + geom_boxplot() + scale_y_continuous (limits = limits) + facet_wrap (~ variable, ncol = 4, scales="free")
+```
 
 
