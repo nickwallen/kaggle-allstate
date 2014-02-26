@@ -1,12 +1,73 @@
+```{r, include=FALSE}
+
+library (ggplot2)
+
+```
+
+
 Kaggle Allstate Purchase Prediction Competition
 ========================================================
 
 Of course, start out by loading the source data sets.
 
-```{r fetch.data}
-
+```{r fetch.data, message=FALSE}
 source ("../R/fetch.R")
 train <- fetch()
-
 ```
+
+### Q. What does the data look like?
+
+```{r review.data}
+dim (train)
+str (train)
+summary (train)
+```
+
+In the training data, a customer always has a 'purchase' record.  There are no customers in the data who have not purchased a policy.
+
+```{r customers.who.dont.purchase}
+customers.no.purchase <- train [ record.type == "purchase", .N, by = customer.id][ N > 1]
+dim (customers.no.purchase)
+```
+
+### Q. What is the 'shopping.pnt' field?
+
+The 'shopping.pnt' field is incremented each time the customer shops or purchases a policy.  The max value indicates how many contacts the customer had with the insurance company before a policy was purchased.  
+
+For example, here is a customer who had 9 contacts with the insurance company before purchasing a policy.
+
+```{r explore.shopping.pnt}
+train [ customer.id == "10000000", 
+        list (customer.id, shopping.pt, record.type, day.of.week, time.of.day )]
+```
+
+### Q. How many times does the typical customer interact with Allstate before purchasing a policy?
+
+The unique count of customer interactions across the data set
+
+```{r number.of.customer.interactions}
+contacts.by.customer <- train [, .N, by = customer.id ]
+sort (unique (contacts.by.customer$N))
+```
+
+```{r}
+ggplot (contacts.by.customer, aes (N)) + geom_histogram (breaks = 2:14)
+```
+
+### Q. Which day of the week do customer contacts occur on?
+
+```{r}
+contacts.by.dow <- train [, .N, by = day.of.week]
+ggplot (contacts.by.dow, aes(day.of.week, N, fill = day.of.week)) + geom_bar()
+```
+
+### Q. When throughout the day do customer contacts occur?
+
+```{r}
+ggplot (train, aes(time.of.day.mins)) + geom_density()
+
+ggplot (train, aes(time.of.day.mins)) + geom_density() + facet_wrap( ~ day.of.week, ncol = 4)
+```
+
+
 
