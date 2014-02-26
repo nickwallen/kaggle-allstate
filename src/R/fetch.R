@@ -24,14 +24,14 @@ fetch <- function (path = "../../data/train.csv.zip") {
   train [, `:=` (
     customer.id    = as.character (customer.id),
     shopping.pt    = as.factor (shopping.pt),
-    record.type    = as.factor (record.type),
+    record.type    = factor (record.type, levels = 0:1, labels = c("shopping","purchase")),
     day.of.week    = wday (day.of.week, label = T, abbr = T),
     state          = as.factor (state),
     location       = as.factor (location),
     risk.factor    = as.factor (risk.factor),
-    married.couple = as.factor (married.couple),
+    married.couple = factor (married.couple, levels = 0:1, labels = c("no","yes")),
     car.value      = as.factor (car.value),
-    homeowner      = as.factor (homeowner),
+    homeowner      = factor (homeowner, levels = 0:1, labels = c("no","yes")),
     c.previous     = as.factor (c.previous),
     a              = as.factor (a),
     b              = as.factor (b),
@@ -42,7 +42,6 @@ fetch <- function (path = "../../data/train.csv.zip") {
     g              = as.factor (g),
     cost           = as.numeric (cost)
   )]
-  
 }
 
 #
@@ -51,8 +50,9 @@ fetch <- function (path = "../../data/train.csv.zip") {
 # the numeric implementation for the generatic function lubridate::wday.
 #
 wday.numeric <- function(x, label = FALSE, abbr = TRUE) {
-  if (!label) 
+  if (!label) {
     return (x)
+  }
   
   labels <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
   if (abbr) {
