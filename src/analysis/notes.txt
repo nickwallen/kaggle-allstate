@@ -1,0 +1,13 @@
+# Predictor Variables Brainstorming:
+#   -Plan cost relative to other "like-kind" plans quoted (if states/risks change, costs are not comparable)
+#   -Plan "Traits" could be correlated ... e.g. - if A=2, could be more probable for B=1
+#     Could run categorical correlations on selected plan traits. This would allow us to predict plans in a strategic order
+#     & use results from Trait[1] to predict Trait[2]
+#   -Recent changes in marital status, group_size, etc. (e.g. - If recently had kids, could change decision)
+#   -Number of recent quotes (getting many quotes could point towards frugality)
+#   -Price Sensitivity ~ homeowner + car_value + ...
+# 
+# 
+# NOTES:
+#   D == 1 is relatively rare
+#   G == 4 is relatively rare
