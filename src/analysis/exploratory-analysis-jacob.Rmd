@@ -1,0 +1,23 @@
+Kaggle Allstate Purchase Prediction Competition
+========================================================
+
+Of course, start out by loading the source data sets.
+
+```{r fetch.data,message=FALSE}
+
+source ("../R/fetch.R")
+train <- fetch()
+
+```
+
+
+Frequency of Each Product Variation
+
+``` {r count.plans}
+
+train[, product := paste0(option.a,option.b,option.c,option.d,option.e,option.f,option.g)]
+ct.prod <- train[, list(ct = length(customer.id)),by=product]
+ggplot(ct.prod,aes(ct))+geom_histogram()
+ggplot(ct.prod,aes(ct))+stat_ecdf()
+
+```
