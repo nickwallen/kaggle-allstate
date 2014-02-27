@@ -124,7 +124,13 @@ hist + labs (title = "Duration of Shopping Experience", x = "Duration (Days)")
 
 *TODO*
 
-### Q. Does group size have a big impact on cost?  Should this be taken into account for option vs cost comparison?
+### Q. Does group size have a big impact on cost?  
 
-*TODO*
+It appears that group size has very little impact on the total cost reflected in the data.
+
+```{r}
+p <- ggplot (train, aes (as.factor(group.size), cost, fill = as.factor(group.size))) 
+p + geom_violin() + geom_boxplot (aes (fill=NULL), alpha = 0.1, width = 0.1, outlier.shape=NA) 
+```
+
 
