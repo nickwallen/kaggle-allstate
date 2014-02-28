@@ -3,6 +3,8 @@
 library (ggplot2)
 library (reshape2)
 
+# set global options for all code chunks
+opts_chunk$set(fig.width=12, fig.height=8, tidy=T)
 ```
 
 
@@ -22,6 +24,7 @@ train <- fetch()
 dim (train)
 str (train)
 summary (train)
+head (train)
 ```
 
 In the training data, a customer always has a 'purchase' record.  There are no customers in the data who have not purchased a policy.
@@ -84,6 +87,7 @@ length (unique (train$product))
 
 ```{r}
 
+<<<<<<< HEAD
 # transform the options from wide to long
 train.melted <- train [, list (customer.id, cost, option.a, 
                                option.b, option.c, option.d, 
@@ -95,11 +99,37 @@ boxplot <- ggplot (train.melted, aes (value, cost, fill = value)) + geom_boxplot
 boxplot + scale_y_continuous (limits = lim) + facet_wrap (~variable, ncol = 4, scales="free")
 ```
 
+### Q. Do customers shop and purchase all on the same day or does this span multiple days?
+
+```{r, echo = F}
+shopping.duration (train)
+```
+
+```{r view.shopping.duration}
+
+# to find the total/max shopping duration, need to look only at the purchase records
+purchases <- train [ record.type == "purchase"]
+
+# build a table
+with (purchases, table (shopping.duration))
+
+# build a hist plot
+hist <- ggplot (purchases, aes (shopping.duration)) + geom_histogram() 
+hist + labs (title = "Duration of Shopping Experience", x = "Duration (Days)")
+```
+
+### Q. How frequently do customer attributes change?
+
+*TODO*
+
+### Q. Does group size have a big impact on cost?  Should this be taken into account for option vs cost comparison?
+
+*TODO*
+
 ### Q. Which options are most popular for customers?
 
 ```{r}
-ggplot (train, aes (opt))
+ggplot (train.melted, aes (opt))
 ```
-
 
 

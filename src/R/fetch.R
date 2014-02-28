@@ -12,7 +12,7 @@ fetch <- function (path = "../../data/train.csv.zip") {
   require (lubridate)
   
   # unzip and load the training data
-  data.csv <- unzip(path, exdir = tempdir())
+  data.csv <- unzip (path, exdir = tempdir())
   train <- fread (data.csv)
   
   # fix-up the column names
@@ -28,7 +28,6 @@ fetch <- function (path = "../../data/train.csv.zip") {
   # clean-up the data types
   train [, `:=` (
     customer.id       = as.character (customer.id),
-    shopping.pt       = as.factor (shopping.pt),
     record.type       = factor (record.type, levels = 0:1, labels = c("shopping","purchase")),
     day.of.week       = wday (day.of.week, label = T, abbr = T),
     time.of.day.mins  = as.minutes (time.of.day),
@@ -50,7 +49,7 @@ fetch <- function (path = "../../data/train.csv.zip") {
   )]
   
   # reorder some of the columns
-  setcolorder(train, c(1:5,26,6:25))
+  setcolorder (train, c(1:5,26,6:25))
   
   return (train)
 }
@@ -88,3 +87,53 @@ as.minutes <- function (x) {
   # convert the input to minutes since midnight
   as.numeric (hours) * 60 + as.numeric (minutes)
 }
+
+#
+# calculates the duration in days between a customer's first shopping 
+# contact and their last purchase contact. 
+#
+# WARNING: this makes a big assumption that the first contact to purchase 
+# is always within 7 days.  this is *probably* a fairly safe assumption 
+# for most of the data.  the data does not provide enough information
+# to do any better.
+#
+shopping.duration <- function (data) {
+  
+  # define the first and last shopping point for each record.  this makes
+  # the logic later more clear.  for example... 
+  #
+  # where shopping point = 1, the first is 1 and the last is 1.  
+  # where shopping point = 3, the first is 1 and the last is 3.
+  shopping.pts <- data [, list (
+    customer.id,
+    shopping.pt.first = 1,
+    shopping.pt.last = shopping.pt
+    )]
+  
+  # find the day of week for the first shopping point
+  setkeyv (data, c("customer.id", "shopping.pt"))
+  setkeyv (shopping.pts, c("customer.id", "shopping.pt.first"))
+  shopping.pts [ data, day.of.week.first := day.of.week]
+  
+  # find the day of week for the last shopping point
+  setkeyv (data, c("customer.id", "shopping.pt"))
+  setkeyv (shopping.pts, c("customer.id", "shopping.pt.last"))
+  shopping.pts [ data, day.of.week.last := day.of.week]
+  
+  # can assume that the point of first contact to purchase was within the same week
+  shopping.pts [ day.of.week.first <= day.of.week.last, 
+                 shopping.duration := day.of.week.last - day.of.week.first ]
+  
+  # must assume that the point of first contact was on week 1 and purchase on week 2
+  shopping.pts [ day.of.week.first >  day.of.week.last, 
+                 shopping.duration := day.of.week.last - (day.of.week.first - as.integer(7)) ]
+  
+  # merge the shopping duration back into the original feature/data set
+  setkey (data, "customer.id")
+  setkey (shopping.pts, "customer.id")
+  data [ shopping.pts, shopping.duration := shopping.duration]  
+  
+  # the input data is modified in-place
+  return (NULL)
+}
+
