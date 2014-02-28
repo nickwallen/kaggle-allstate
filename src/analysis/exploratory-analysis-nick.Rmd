@@ -1,6 +1,7 @@
 ```{r, include=FALSE}
 
 library (ggplot2)
+library (reshape2)
 
 ```
 
@@ -64,7 +65,6 @@ ggplot (contacts.by.dow, aes(day.of.week, N, fill = day.of.week)) + geom_bar()
 
 ```{r}
 ggplot (train, aes(time.of.day.mins)) + geom_density()
-
 ggplot (train, aes(time.of.day.mins)) + geom_density() + facet_wrap( ~ day.of.week, ncol = 4)
 ```
 
@@ -84,19 +84,22 @@ length (unique (train$product))
 
 ```{r}
 
-library (reshape2)
-train.melted <- train [, list (customer.id, cost, option.a, option.b, option.c, option.d, option.e, option.f, option.g)]
+# transform the options from wide to long
+train.melted <- train [, list (customer.id, cost, option.a, 
+                               option.b, option.c, option.d, 
+                               option.e, option.f, option.g) ]
 train.melted <- data.table (melt (train.melted, id.vars = c("customer.id", "cost")))
 
-# TODO - why is this not working?
-# transform the data from wide to long for plotting
-#train.melted <- train [, list (customer.id, cost, option.a, option.b, option.c, option.d, option.e, option.f, option.g)]
-#train.melted <- train [, list ( option.name  = as.factor (names (.SD)), option.value = unlist(.SD, use.names = F)), by = list (customer.id, cost) ]
-
-limits <- quantile (train.melted$cost, c(0.01, 0.99))
-
-p <- ggplot (train.melted, aes (value, cost, fill = value))
-p + geom_boxplot() + scale_y_continuous (limits = limits) + facet_wrap (~ variable, ncol = 4, scales="free")
+lim <- quantile (train.melted$cost, c(0.01, 0.99))
+boxplot <- ggplot (train.melted, aes (value, cost, fill = value)) + geom_boxplot()
+boxplot + scale_y_continuous (limits = lim) + facet_wrap (~variable, ncol = 4, scales="free")
 ```
+
+### Q. Which options are most popular for customers?
+
+```{r}
+ggplot (train, aes (opt))
+```
+
 
 
