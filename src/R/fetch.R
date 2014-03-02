@@ -1,7 +1,5 @@
 library (data.table)
 
-
-
 #
 # loads and cleans the competition data.  the function defaults to
 # loading the training data.  the test data can be loaded by supplying

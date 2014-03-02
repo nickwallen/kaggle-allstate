@@ -87,7 +87,6 @@ length (unique (train$product))
 
 ```{r}
 
-<<<<<<< HEAD
 # transform the options from wide to long
 train.melted <- train [, list (customer.id, cost, option.a, 
                                option.b, option.c, option.d, 
@@ -97,6 +96,8 @@ train.melted <- data.table (melt (train.melted, id.vars = c("customer.id", "cost
 lim <- quantile (train.melted$cost, c(0.01, 0.99))
 boxplot <- ggplot (train.melted, aes (value, cost, fill = value)) + geom_boxplot()
 boxplot + scale_y_continuous (limits = lim) + facet_wrap (~variable, ncol = 4, scales="free")
+
+rm (train.melted)
 ```
 
 ### Q. Do customers shop and purchase all on the same day or does this span multiple days?
@@ -129,7 +130,36 @@ hist + labs (title = "Duration of Shopping Experience", x = "Duration (Days)")
 ### Q. Which options are most popular for customers?
 
 ```{r}
-ggplot (train.melted, aes (opt))
+
+# transform the options from wide to long
+train.melted <- train [, list (customer.id, option.a, 
+                               option.b, option.c, option.d, 
+                               option.e, option.f, option.g) ]
+train.melted <- data.table (melt (train.melted, id.vars = c("customer.id")))
+
+# plot it
+ggplot (train.melted, aes (value)) + geom_histogram() + facet_wrap (~variable, scales = "free")
 ```
 
+### Q. What would a naive model look like in this case?
+
+A naive model would simply predict the most popular choice for each option.
+
+```{r}
+
+source ("../R/fetch.R")
+source ("../R/models.R")
+train <- fetch()
+
+# what the predicted options will be called
+options <- na.omit (str_extract (names (train), "option.[a-g]$"))
+options.hat <- paste0 (options, ".hat")
+
+# train and predict the options with the naive model
+model <- naive.model (train)
+
+# TODO why is the R session blowing chunks on this assignment?
+train [, options.hat := predict (model, newdata = train)]
+
+```
 
