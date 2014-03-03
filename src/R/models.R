@@ -1,6 +1,4 @@
 
-
-
 #
 # the naive model by which to compare all other models.  the naive model simply
 # selects the most popular option in the training data.
