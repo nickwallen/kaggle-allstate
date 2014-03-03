@@ -33,7 +33,7 @@ fetch <- function (path = "../../data/train.csv.zip") {
     
     # time/date features
     day.of.week       = wday (day.of.week, label = T, abbr = T),
-    time.of.day.mins  = as.minutes (time.of.day),
+    time.of.day.hours = as.hours (time.of.day),
     
     # many of the features are factors
     state             = as.factor (state),
@@ -49,7 +49,7 @@ fetch <- function (path = "../../data/train.csv.zip") {
     option.f          = as.factor (option.f),
     option.g          = as.factor (option.g),
     cost              = as.numeric (cost),
-    
+
     # make some of the factor levels more intellegible
     homeowner         = factor (homeowner,      levels = 0:1, labels = c("no","yes")),
     record.type       = factor (record.type,    levels = 0:1, labels = c("shopping","purchase")),
@@ -87,7 +87,7 @@ wday.numeric <- function(x, label = FALSE, abbr = TRUE) {
 # value that represents the number of minutes since midnight.  for example,
 # "01:30" would be 90 as this is 90 minutes past midnight.
 #
-as.minutes <- function (x) {
+as.hours <- function (x) {
   require (stringr)
   
   # extract the HH and MM components of the input
@@ -95,5 +95,5 @@ as.minutes <- function (x) {
   minutes <- str_extract (x, "[0-9]{2}$")
 
   # convert the input to minutes since midnight
-  as.numeric (hours) * 60 + as.numeric (minutes)
+  as.numeric (hours) + (as.numeric (minutes) / 60)
 }
