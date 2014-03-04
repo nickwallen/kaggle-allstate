@@ -26,21 +26,21 @@ Contains analysis around modeling for the Kaggle Allstate competition.
 A naive model would simply predict the most popular choice for each option.
 
 ```{r}
-
-# fetch the training data
+# fetch the data
 train <- fetch()
+test <- fetch (train = F)
 
 # train the naive model
 model <- naive.model (train)
 
 # make predictions 
-train [, options.hat() := predict (model, .SD), with = F]
+test [, options.hat() := predict (model, .SD), with = F]
 ```
 
 Notice how different the outcomes from each scoring mechanism is.  The Naive Model does tremendously better when scoring based on the number of correct options.
 
 ```{r}
-accuracy.score (train)
-partial.accuracy.score (train)
+accuracy.score (test)
+partial.accuracy.score (test)
 ```
 
