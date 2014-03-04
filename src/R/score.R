@@ -40,7 +40,7 @@ partial.accuracy.score <- function (data) {
   }
 
   # fix up factors - TODO ugly; there has to be a better way (and place) to do this
-  train [, `:=` (
+  data [, `:=` (
     option.a.hat = factor (option.a.hat, levels = levels (option.a)),
     option.b.hat = factor (option.b.hat, levels = levels (option.b)),
     option.c.hat = factor (option.c.hat, levels = levels (option.c)),
