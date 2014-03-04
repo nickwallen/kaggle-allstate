@@ -3,11 +3,14 @@ library (data.table)
 #
 # loads and cleans the competition data.  the function defaults to
 # loading the training data.  the test data can be loaded by supplying
-# the 'path' argument.
+# FALSE to the 'train' argument.
 #
-fetch <- function (path = "../../data/train.csv.zip") {
+fetch <- function (train = TRUE) {
   require (data.table)
   require (lubridate)
+
+  # determine the path to the source data
+  path <- ifelse (train, "../../data/train.csv.zip", "../../data/test.csv.zip")
   
   # unzip and load the training data
   data.csv <- unzip (path, exdir = tempdir())
