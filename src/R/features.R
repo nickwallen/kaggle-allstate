@@ -53,16 +53,9 @@ add.shopping.duration <- function (data) {
 # (3*2*4*3*2*4*4).
 #
 add.product <- function (data) {
-  
-  # TODO use options() and options.hat() with = F!!
-  
-  data [, 
-    product := paste0 (option.a, option.b, option.c, option.d, 
-                       option.e, option.f, option.g )
-  ]
-  
-  # make explicit that the input data is modified in-place
-  return (NULL)
+
+  data [, product := paste0 (option.a, option.b, option.c, option.d, 
+                             option.e, option.f, option.g )]
 }
 
 # 
@@ -70,12 +63,71 @@ add.product <- function (data) {
 #
 add.product.hat <- function (data) {
   
-  data [, 
-    product.hat := paste0 (option.a.hat, option.b.hat, option.c.hat, option.d.hat, 
-                           option.e.hat, option.f.hat, option.g.hat )
-  ]
-  
-  # make explicit that the input data is modified in-place
-  return (NULL)
+  data [, product.hat := paste0 (option.a.hat, option.b.hat, option.c.hat, option.d.hat, 
+                                 option.e.hat, option.f.hat, option.g.hat ) ]
 }
 
+
+#
+# flattens a customer's shopping history into a single record that can then be 
+# used for training and prediction.
+#
+flatten.shopping.history <- function (data) {
+  
+  # determine how many times a customer shopped for each option choice
+  shopping <- data [ record.type == "shopping", list (
+    
+    # option a
+    option.a.0 = sum (option.a == 0),
+    option.a.1 = sum (option.a == 1),
+    option.a.2 = sum (option.a == 2),
+    
+    # option b
+    option.b.0 = sum (option.b == 0),
+    option.b.1 = sum (option.b == 1),
+    
+    # option c
+    option.c.1 = sum (option.c == 1),
+    option.c.2 = sum (option.c == 2),
+    option.c.3 = sum (option.c == 3),
+    option.c.4 = sum (option.c == 4),
+    
+    # option d
+    option.d.1 = sum (option.d == 1),
+    option.d.2 = sum (option.d == 2),
+    option.d.3 = sum (option.d == 3),
+    
+    # option e
+    option.e.0 = sum (option.e == 0),
+    option.e.1 = sum (option.e == 1),
+    
+    # option f 
+    option.f.0 = sum (option.f == 0),
+    option.f.1 = sum (option.f == 1),
+    option.f.2 = sum (option.f == 2),
+    option.f.3 = sum (option.f == 3),
+
+    # option g
+    option.g.1 = sum (option.g == 1),
+    option.g.2 = sum (option.g == 2),
+    option.g.3 = sum (option.g == 3),
+    option.g.4 = sum (option.g == 4)
+    
+  ), by = customer.id ]
+  setkey (shopping, "customer.id")
+  
+  # which options to the shopper actually purchase?
+  purchase <- data [ record.type == "purchase", c("customer.id", options()), with = FALSE ]
+  setkey (purchase, "customer.id")
+
+  # merge the shopping and purchase history
+  shopping [ purchase, `:=` (option.a = option.a, 
+                             option.b = option.b,
+                             option.c = option.c,
+                             option.d = option.d,
+                             option.e = option.e,
+                             option.f = option.f,
+                             option.g = option.g )]
+  
+  return (shopping)
+}

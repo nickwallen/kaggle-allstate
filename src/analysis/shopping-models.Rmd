@@ -57,6 +57,15 @@ The definition for each of these fields is as follows.
 | *option.a*    | The outcome for option a that is being predicted.  The value for this field comes from the purchase record.
 | *option.b*    | ...
 
+Does this work??
+
+```{r}
+train <- fetch()
+shopping <- flatten.shopping.history (train)
+str (shopping)
+```
+
+
 ### Modeling
 
 #### TODO: This takes care of the option elements of the shopping history, but how should the additional date-related 'day.of.week' and 'time.of.day.hours' fields be leveraged in the analysis.
