@@ -10,6 +10,7 @@ source ("../R/fetch.R")
 source ("../R/features.R")
 source ("../R/models.R")
 source ("../R/score.R")
+source ("../R/utils.R")
 
 # set global options for all code chunks
 opts_chunk$set(fig.width=12, fig.height=8, tidy=T)
@@ -34,9 +35,12 @@ model <- naive.model (train)
 
 # make predictions 
 train [, options.hat() := predict (model, .SD), with = F]
+```
 
-# score the model
+Notice how different the outcomes from each scoring mechanism is.  The Naive Model does tremendously better when scoring based on the number of correct options.
+
+```{r}
 accuracy.score (train)
-
+partial.accuracy.score (train)
 ```
 
