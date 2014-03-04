@@ -34,6 +34,7 @@ options.hat <- paste0 (options, ".hat")
 model <- naive.model (train)
 
 # TODO why is the R session blowing chunks on this assignment?
-train [, options.hat := predict (model, newdata = train)]
+train [, options.hat := predict (model, .SD), with = F]
+
 ```
 

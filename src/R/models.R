@@ -43,5 +43,6 @@ predict.naive <- function (model, newdata) {
   # how many variables are there to predict?
   cols <- length (choices)
   
-  predictions <- matrix (rep (choices, rows), ncol = cols, byrow = T)
+  # is there a more efficient way to do this?
+  predictions <- data.frame (matrix (rep (choices, rows), ncol = cols, byrow = T))
 }
