@@ -9,6 +9,7 @@ library (stringr)
 source ("../R/fetch.R")
 source ("../R/features.R")
 source ("../R/models.R")
+source ("../R/score.R")
 
 # set global options for all code chunks
 opts_chunk$set(fig.width=12, fig.height=8, tidy=T)
@@ -24,17 +25,18 @@ Contains analysis around modeling for the Kaggle Allstate competition.
 A naive model would simply predict the most popular choice for each option.
 
 ```{r}
+
+# fetch the training data
 train <- fetch()
 
-# the prediction for 'option.x' will be called 'option.x.hat'
-options <- na.omit (str_extract (names (train), "option.[a-g]$"))
-options.hat <- paste0 (options, ".hat")
-
-# train and predict the options with the naive model
+# train the naive model
 model <- naive.model (train)
 
-# TODO why is the R session blowing chunks on this assignment?
-train [, options.hat := predict (model, .SD), with = F]
+# make predictions 
+train [, options.hat() := predict (model, .SD), with = F]
+
+# score the model
+accuracy.score (train)
 
 ```
 

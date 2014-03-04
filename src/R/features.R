@@ -54,8 +54,25 @@ add.shopping.duration <- function (data) {
 #
 add.product <- function (data) {
   
+  # TODO use options() and options.hat() with = F!!
+  
   data [, 
-    product := paste0 (option.a, option.b, option.c, option.d, option.e, option.f, option.g)
+    product := paste0 (option.a, option.b, option.c, option.d, 
+                       option.e, option.f, option.g )
+  ]
+  
+  # make explicit that the input data is modified in-place
+  return (NULL)
+}
+
+# 
+# create a single feature that represents all of the predicted options; aka product.hat
+#
+add.product.hat <- function (data) {
+  
+  data [, 
+    product.hat := paste0 (option.a.hat, option.b.hat, option.c.hat, option.d.hat, 
+                           option.e.hat, option.f.hat, option.g.hat )
   ]
   
   # make explicit that the input data is modified in-place
