@@ -1,0 +1,142 @@
+Kaggle Allstate Purchase Prediction Competition
+========================================================
+
+Of course, start out by loading the source data sets.
+
+<<<<<<< HEAD:src/analysis/exploratory-analysis-nick.Rmd
+```{r fetch.data}
+
+source ("../R/fetch.R")
+train <- fetch()
+=======
+```{r fetch.data, message=FALSE}
+
+train <- fetch()
+
+# add some additional features
+add.shopping.duration (train)
+add.product (train)
+```
+
+### Q. What does the data look like?
+
+```{r review.data}
+dim (train)
+str (train)
+summary (train)
+```
+
+In the training data, a customer always has a 'purchase' record.  There are no customers in the data who have not purchased a policy.
+
+```{r customers.who.dont.purchase}
+customers.no.purchase <- train [ record.type == "purchase", .N, by = customer.id][ N > 1]
+dim (customers.no.purchase)
+```
+
+### Q. What is the 'shopping.pnt' field?
+
+The 'shopping.pnt' field is incremented each time the customer shops or purchases a policy.  The max value indicates how many contacts the customer had with the insurance company before a policy was purchased.  
+
+For example, here is a customer who had 9 contacts with the insurance company before purchasing a policy.
+
+```{r explore.shopping.pnt}
+train [ customer.id == "10000000" ][, 1:5, with = F]
+```
+
+### Q. How many times does the typical customer interact with Allstate before purchasing a policy?
+
+The number of times a customer interacts with Allstate before making a purchase.  Of course, the data only contains customers who have made a purchase; not those who have not.
+
+```{r number.of.customer.interactions}
+contacts.by.customer <- train [, .N, by = customer.id ]
+sort (unique (contacts.by.customer$N))
+
+ggplot (contacts.by.customer, aes (N)) + geom_histogram (breaks = 2:14)
+```
+
+### Q. Which day of the week do customer contacts occur on?
+
+```{r}
+ggplot (train, aes(day.of.week, fill = day.of.week)) + geom_histogram()
+```
+
+### Q. When throughout the day do customer contacts occur?
+
+```{r}
+ggplot (train, aes(time.of.day.hours)) + geom_density()
+ggplot (train, aes(time.of.day.hours)) + geom_density() + facet_wrap( ~ day.of.week, ncol = 4)
+```
+
+### Q. A product is composed of a unique selection of the 7 options.  There are 2,304 unique products (3*2*4*3*2*4*4).
+
+There are only 1,809 of the 2,304 available 'products' in the training set.
+
+```{r}
+length (unique (train$product))
+```
+
+### Q. We know that cost is a major driver of consumer choices.  If we can attribute a cost for each option choice, we should be able to make some fairly accurate predictions.
+
+```{r, message=F}
+
+# transform the options from wide to long
+train.melted <- train [, list (customer.id, cost, option.a, 
+                               option.b, option.c, option.d, 
+                               option.e, option.f, option.g) ]
+train.melted <- data.table (melt (train.melted, id.vars = c("customer.id", "cost")))
+
+lim <- quantile (train.melted$cost, c(0.01, 0.99))
+p <- ggplot (train.melted, aes (value, cost, fill = value)) + geom_boxplot()
+p + scale_y_continuous (limits = lim) + facet_wrap (~variable, ncol = 4, scales = "free")
+```
+
+### Q. Do customers shop and purchase all on the same day or does this span multiple days?
+
+```{r view.shopping.duration}
+
+# to find the total/max shopping duration, need to look only at the purchase records
+purchases <- train [ record.type == "purchase"]
+
+# build a table
+with (purchases, table (shopping.duration))
+>>>>>>> 0f42bb5eff03770fd6f7fc151000cf9ec56494a9:src/analysis/explore-nick.Rmd
+
+```
+
+<<<<<<< HEAD:src/analysis/exploratory-analysis-nick.Rmd
+=======
+### Q. Does group size have a big impact on cost?  Should this be taken into account for option vs cost comparison?
+
+There are many more samples in the data of smaller groups.  The group size in the training data is skewed to the right.
+
+```{r}
+ggplot (train, aes (as.factor (group.size))) + geom_histogram()
+```
+
+The cost does not change much based on the group size.  I would expect the cost to increase dramatically as the group size increases.  Perhaps this is not the case with insurance or the 'cost' is really a cost per individual.
+
+There also appears to be more outliers the smaller the group is.  This is probably due to there being very few samples of groups of size 3, 4+.
+
+```{r}
+ggplot (train, aes (as.factor (group.size), cost)) + geom_boxplot()
+```
+
+### Q. Which options are most popular for customers?
+
+```{r}
+
+# transform the options from wide to long
+train.melted <- train [, list (customer.id, option.a, 
+                               option.b, option.c, option.d, 
+                               option.e, option.f, option.g) ]
+train.melted <- data.table (melt (train.melted, id.vars = c("customer.id")))
+
+# plot it
+p <- ggplot (train.melted, aes (value)) + geom_histogram (aes (fill = value)) 
+p + facet_wrap (~variable, scales = "free") + theme (legend.position = "none")
+```
+
+### Q. How frequently do customer attributes change?
+
+*TODO*
+>>>>>>> 0f42bb5eff03770fd6f7fc151000cf9ec56494a9:src/analysis/explore-nick.Rmd

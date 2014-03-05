@@ -8,7 +8,7 @@
 # for most of the data.  the data does not provide enough information
 # to do any better.
 #
-shopping.duration <- function (data) {
+add.shopping.duration <- function (data) {
   
   # define the first and last shopping point for each record.  this makes
   # the logic later more clear.  for example... 
@@ -44,6 +44,25 @@ shopping.duration <- function (data) {
   setkey (shopping.pts, "customer.id")
   data [ shopping.pts, shopping.duration := shopping.duration]  
   
-  # the input data is modified in-place
+  # make explicit that the input data is modified in-place
   return (NULL)
+}
+
+# 
+# a product is a chosen set of options.  There are 2,304 unique products 
+# (3*2*4*3*2*4*4).
+#
+add.product <- function (data) {
+
+  data [, product := paste0 (option.a, option.b, option.c, option.d, 
+                             option.e, option.f, option.g )]
+}
+
+# 
+# create a single feature that represents all of the predicted options; aka product.hat
+#
+add.product.hat <- function (data) {
+  
+  data [, product.hat := paste0 (option.a.hat, option.b.hat, option.c.hat, option.d.hat, 
+                                 option.e.hat, option.f.hat, option.g.hat ) ]
 }

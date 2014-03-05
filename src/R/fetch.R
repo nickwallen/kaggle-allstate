@@ -5,11 +5,14 @@ library (data.table)
 #
 # loads and cleans the competition data.  the function defaults to
 # loading the training data.  the test data can be loaded by supplying
-# the 'path' argument.
+# FALSE to the 'train' argument.
 #
-fetch <- function (path = "../../data/train.csv.zip") {
+fetch <- function (train = TRUE) {
   require (data.table)
   require (lubridate)
+
+  # determine the path to the source data
+  path <- ifelse (train, "../../data/train.csv.zip", "../../data/test.csv.zip")
   
   # unzip and load the training data
   data.csv <- unzip(path, exdir = tempdir())
@@ -31,7 +34,13 @@ fetch <- function (path = "../../data/train.csv.zip") {
     shopping.pt       = as.factor (shopping.pt),
     record.type       = factor (record.type, levels = 0:1, labels = c("shopping","purchase")),
     day.of.week       = wday (day.of.week, label = T, abbr = T),
+<<<<<<< HEAD
     time.of.day.mins  = as.minutes (time.of.day),
+=======
+    time.of.day.hours = as.hours (time.of.day),
+    
+    # many of the features are factors
+>>>>>>> 0f42bb5eff03770fd6f7fc151000cf9ec56494a9
     state             = as.factor (state),
     location          = as.factor (location),
     risk.factor       = as.factor (risk.factor),
@@ -46,7 +55,16 @@ fetch <- function (path = "../../data/train.csv.zip") {
     option.e          = as.factor (option.e),
     option.f          = as.factor (option.f),
     option.g          = as.factor (option.g),
+<<<<<<< HEAD
     cost              = as.numeric (cost)
+=======
+    cost              = as.numeric (cost),
+
+    # make some of the factor levels more intellegible
+    homeowner         = factor (homeowner,      levels = 0:1, labels = c("no","yes")),
+    record.type       = factor (record.type,    levels = 0:1, labels = c("shopping","purchase")),
+    married.couple    = factor (married.couple, levels = 0:1, labels = c("no","yes"))
+>>>>>>> 0f42bb5eff03770fd6f7fc151000cf9ec56494a9
   )]
   
   # reorder some of the columns
@@ -78,7 +96,7 @@ wday.numeric <- function(x, label = FALSE, abbr = TRUE) {
 # value that represents the number of minutes since midnight.  for example,
 # "01:30" would be 90 as this is 90 minutes past midnight.
 #
-as.minutes <- function (x) {
+as.hours <- function (x) {
   require (stringr)
   
   # extract the HH and MM components of the input
@@ -86,5 +104,5 @@ as.minutes <- function (x) {
   minutes <- str_extract (x, "[0-9]{2}$")
 
   # convert the input to minutes since midnight
-  as.numeric (hours) * 60 + as.numeric (minutes)
+  as.numeric (hours) + (as.numeric (minutes) / 60)
 }
