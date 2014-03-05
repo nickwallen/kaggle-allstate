@@ -29,7 +29,6 @@ fetch <- function (train = TRUE) {
   train [, `:=` (
     customer.id       = as.character (customer.id),
     shopping.pt       = as.factor (shopping.pt),
-    record.type       = factor (record.type, levels = 0:1, labels = c("shopping","purchase")),
     day.of.week       = wday (day.of.week, label = T, abbr = T),
     time.of.day.hours = as.hours (time.of.day),
     
@@ -37,9 +36,7 @@ fetch <- function (train = TRUE) {
     state             = as.factor (state),
     location          = as.factor (location),
     risk.factor       = as.factor (risk.factor),
-    married.couple    = factor (married.couple, levels = 0:1, labels = c("no","yes")),
     car.value         = as.factor (car.value),
-    homeowner         = factor (homeowner, levels = 0:1, labels = c("no","yes")),
     option.c.previous = as.factor (option.c.previous),
     option.a          = as.factor (option.a),
     option.b          = as.factor (option.b),
