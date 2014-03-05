@@ -1,19 +1,50 @@
 
+
+#
+# models the shopping history and predicts a single option using 'gbm'. 
+#
+# gbm.grid    the possible parameters used for tuning
+# index       enables a subset of the data to be used for training
+#
+gbm.model <- function (option,
+                       train, 
+                       interaction.depth = c(1, 5, 9),
+                       n.trees           = c(50, 100, 150, 200),
+                       shrinkage         = 0.1,
+                       control           = trainControl (method = "cv", number = 5),
+                       ...) {
+
+  # transforms the input data into a form that can be 'trained'
+  shopping <- flatten.shopping.history (train)
+  
+  # tunes the model parameters and trains a model
+  fit <- train (x         = shopping [, 2:23, with = F ],
+                y         = shopping [[option]],
+                method    = "gbm", 
+                trControl = control,
+                tuneGrid  = expand.grid (interaction.depth = interaction.depth, n.trees = n.trees, shrinkage = shrinkage),
+                ... )
+  
+  return (fit)  
+}
+
+
+
 #
 # the naive model by which to compare all other models.  the naive model simply
 # selects the most popular option in the training data.
 #
-naive.model <- function (train) {
+naive.model <- function (data) {
   
   # find the total number of customers who chose each option
   options <- rbindlist ( list (
-    train [, list (option = "option.a", .N), by = list (choice = option.a)],
-    train [, list (option = "option.b", .N), by = option.b],
-    train [, list (option = "option.c", .N), by = option.c],
-    train [, list (option = "option.d", .N), by = option.d],
-    train [, list (option = "option.e", .N), by = option.e],
-    train [, list (option = "option.f", .N), by = option.f],
-    train [, list (option = "option.g", .N), by = option.g]
+    data [, list (option = "option.a", .N), by = list (choice = option.a)],
+    data [, list (option = "option.b", .N), by = option.b],
+    data [, list (option = "option.c", .N), by = option.c],
+    data [, list (option = "option.d", .N), by = option.d],
+    data [, list (option = "option.e", .N), by = option.e],
+    data [, list (option = "option.f", .N), by = option.f],
+    data [, list (option = "option.g", .N), by = option.g]
   ))
   
   # find only the most popular choice for each option
@@ -31,6 +62,9 @@ naive.model <- function (train) {
 # this is an implementation of the generic function stats::predict.
 #
 predict.naive <- function (model, newdata) {
+
+  # need a prediction for each customer
+  customers <- newdata$customer.id
   
   # extract the most popular options
   option.mx <- t (model$popular.options [, list (option, choice)])
@@ -38,7 +72,7 @@ predict.naive <- function (model, newdata) {
   choices <- option.mx ["choice", ]
 
   # how many predictions do we need to make?
-  rows <- nrow (newdata)
+  rows <- length (customers)
   
   # how many variables are there to predict?
   cols <- length (choices)

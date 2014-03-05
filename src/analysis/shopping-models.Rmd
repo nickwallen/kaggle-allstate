@@ -5,6 +5,7 @@ library (ggplot2)
 library (reshape2)
 library (lubridate)
 library (stringr)
+library (caret)
 
 source ("../R/fetch.R")
 source ("../R/features.R")
@@ -57,16 +58,81 @@ The definition for each of these fields is as follows.
 | *option.a*    | The outcome for option a that is being predicted.  The value for this field comes from the purchase record.
 | *option.b*    | ...
 
-Does this work??
+Does this work??  It does!  That wasy easy.
 
 ```{r}
-train <- fetch()
-shopping <- flatten.shopping.history (train)
+
+# fetch the source data
+data <- fetch()
+
+# flatten the source into a form that can be used for training
+shopping <- flatten.shopping.history (data)
+
+# what do we have here?
 str (shopping)
+rm (data)
+```
+
+### Splitting
+
+Split the data into a training and a hold-out test set.  Each set must be representative of the whole.  Use Caret's createDataPartition function for this.  Since this function requires a single outcome variable, create a 'product' representation of the options to allow it to do so.
+
+```{r}
+
+# use the 'product' attribute to split the data into representative test/train sets
+add.product (shopping)
+train.index <- createDataPartition (shopping$product, p = 0.8, list = F)[,1]
+
+# create a train and test set
+shopping.train <- shopping [  train.index ]
+shopping.test  <- shopping [ -train.index ]
+
+dim (shopping.test)
+dim (shopping.train)
+```
+
+### Modeling
+
+Let's first look at a naive model.  The naive model simply chooses the most popular option for each customer.
+
+```{r}
+
+# train the naive model
+fit <- naive.model (shopping.train)
+
+# make predictions with the naive model
+shopping.test [, options.hat() := predict (fit, .SD), with = F]
+
+# score the results
+accuracy.score (shopping.test)
+partial.accuracy.score (shopping.test)
+```
+
+My first attempt will focus on modeling and training each of the options (a-g) independently.  There are far fewer models in R that can, or at least make it easy, to handle multiple output in my experience.  Since we have no knowledge of what each option actually is and each may be some what unrelated (auto liability versus umbrella coverage) modeling them separately will likely help (or at least not hurt).
+
+```{r}
+fit.a <- gbm.model ("option.a", train)
+fit.b <- gbm.model ("option.b", train)
+fit.c <- gbm.model ("option.c", train)
+fit.d <- gbm.model ("option.d", train)
+fit.e <- gbm.model ("option.e", train)
+fit.f <- gbm.model ("option.f", train)
+fit.g <- gbm.model ("option.g", train)
+```
+
+How did the parameter tuning go?
+
+```{r}
+ggplot(fit.a)
+```
+
+Which predictors are most important?  The results seem to show that a customer shopping for a particular option is indicative of what they will eventually purchase.  Duh.
+
+```{r}
+plot (varImp (fit.a, scale = F), top = 10)
 ```
 
 
-### Modeling
 
 #### TODO: This takes care of the option elements of the shopping history, but how should the additional date-related 'day.of.week' and 'time.of.day.hours' fields be leveraged in the analysis.
 

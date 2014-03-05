@@ -39,17 +39,6 @@ partial.accuracy.score <- function (data) {
     stop ("missing option fields in the input")
   }
 
-  # fix up factors - TODO ugly; there has to be a better way (and place) to do this
-  data [, `:=` (
-    option.a.hat = factor (option.a.hat, levels = levels (option.a)),
-    option.b.hat = factor (option.b.hat, levels = levels (option.b)),
-    option.c.hat = factor (option.c.hat, levels = levels (option.c)),
-    option.d.hat = factor (option.d.hat, levels = levels (option.d)),
-    option.e.hat = factor (option.e.hat, levels = levels (option.e)),
-    option.f.hat = factor (option.f.hat, levels = levels (option.f)),
-    option.g.hat = factor (option.g.hat, levels = levels (option.g))
-  )]
-  
   # the partial score is the sum of all correctly predicted options
   data [, partial.score := 
           (option.a == option.a.hat) + 
