@@ -8,7 +8,7 @@ library (stringr)
 
 source ("../R/fetch.R")
 source ("../R/features.R")
-source ("../R/models.R")
+source ("../R/shopping-models.R")
 source ("../R/score.R")
 source ("../R/utils.R")
 
