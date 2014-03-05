@@ -22,3 +22,10 @@ options.hat <- function () {
 options <- function () {
   c ("option.a", "option.b", "option.c", "option.d", "option.e", "option.f", "option.g")
 }
+
+#
+# the names of all predictor variables; ie all those except options() and options.hat()
+#
+non.options <- function (data) {
+  setdiff(names(data), options())
+}
