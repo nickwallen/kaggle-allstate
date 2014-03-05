@@ -1,6 +1,3 @@
-library (data.table)
-
-
 
 #
 # loads and cleans the competition data.  the function defaults to
@@ -34,13 +31,9 @@ fetch <- function (train = TRUE) {
     shopping.pt       = as.factor (shopping.pt),
     record.type       = factor (record.type, levels = 0:1, labels = c("shopping","purchase")),
     day.of.week       = wday (day.of.week, label = T, abbr = T),
-<<<<<<< HEAD
-    time.of.day.mins  = as.minutes (time.of.day),
-=======
     time.of.day.hours = as.hours (time.of.day),
     
     # many of the features are factors
->>>>>>> 0f42bb5eff03770fd6f7fc151000cf9ec56494a9
     state             = as.factor (state),
     location          = as.factor (location),
     risk.factor       = as.factor (risk.factor),
@@ -55,16 +48,12 @@ fetch <- function (train = TRUE) {
     option.e          = as.factor (option.e),
     option.f          = as.factor (option.f),
     option.g          = as.factor (option.g),
-<<<<<<< HEAD
-    cost              = as.numeric (cost)
-=======
     cost              = as.numeric (cost),
 
     # make some of the factor levels more intellegible
     homeowner         = factor (homeowner,      levels = 0:1, labels = c("no","yes")),
     record.type       = factor (record.type,    levels = 0:1, labels = c("shopping","purchase")),
     married.couple    = factor (married.couple, levels = 0:1, labels = c("no","yes"))
->>>>>>> 0f42bb5eff03770fd6f7fc151000cf9ec56494a9
   )]
   
   # reorder some of the columns
