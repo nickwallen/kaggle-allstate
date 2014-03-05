@@ -23,3 +23,13 @@ ggplot(ct.prod,aes(ct))+stat_ecdf()
 
 
 ```
+
+Build "Naive" Model Based only on Customer Attributes & Purchase Points
+========================================================================
+
+```{r cust.model,message=FALSE}
+
+
+
+
+```
