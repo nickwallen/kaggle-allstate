@@ -9,7 +9,7 @@ fetch <- function (train = TRUE) {
   require (lubridate)
 
   # determine the path to the source data
-  path <- ifelse (train, "../../data/train.csv.zip", "../../data/test.csv.zip")
+  path <- ifelse (train, "../../data/train.csv.zip", "../../data/test_v2.csv.zip")
   
   # unzip and load the training data
   data.csv <- unzip(path, exdir = tempdir())
