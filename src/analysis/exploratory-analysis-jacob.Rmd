@@ -4,8 +4,9 @@ Kaggle Allstate Purchase Prediction Competition
 Of course, start out by loading the source data sets.
 
 ```{r fetch.data,message=FALSE}
-
+library(randomForest)
 source ("../R/fetch.R")
+source ("../R/utils.R")
 train <- fetch()
 
 ```
@@ -28,8 +29,28 @@ Build "Naive" Model Based only on Customer Attributes & Purchase Points
 ========================================================================
 
 ```{r cust.model,message=FALSE}
+buy <- train[record.type == "purchase"]
+
+buy.in <- buy[state == "IN"]
+
+form <- as.formula(paste0("option.a~",paste("day.of.week",
+                                 "time.of.day.hours",
+                                # "state",
+                                # "location",
+                                 "group.size",
+                                 "homeowner",
+                                 "car.age",
+                                 "car.value",
+                                 "risk.factor",
+                                 "age.oldest",
+                                 "age.youngest",
+                                 "married.couple",
+                                 "option.c.previous",
+                                 "duration.previous",sep='+')))
+
+fit.a <- randomForest(form, data= buy, ntree = 100,na.action=na.omit)
 
 
+ ```
 
 
-```
