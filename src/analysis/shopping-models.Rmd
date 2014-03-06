@@ -12,6 +12,7 @@ source ("../R/features.R")
 source ("../R/shopping-models.R")
 source ("../R/score.R")
 source ("../R/utils.R")
+source ("../R/cache.R")
 
 # set global options for all code chunks
 opts_chunk$set(fig.width=12, fig.height=8, tidy=T)
@@ -83,29 +84,32 @@ Split the data into a training and a hold-out test set.  Each set must be repres
 add.plan (shopping)
 train.index <- createDataPartition (shopping$plan, p = 0.8, list = F)[,1]
 
+```
+
+### Popular Model
+
+Let's first look at a popular model.  The popular model simply chooses the option that has been shopped for by most
+customers.  If a customer looks at the same option multiple times, then the option receives multiple votes.
+
+```{r, results='hide'}
+
 # create a train and test set
 shopping.train <- shopping [  train.index ]
 shopping.test  <- shopping [ -train.index ]
 
-dim (shopping.test)
-dim (shopping.train)
-```
-
-### Naive Model
-
-Let's first look at a naive model.  The naive model simply chooses the most popular option for each customer.
-
-```{r}
-
 # train the naive model
-fit <- naive.model (shopping.train)
+fit <- popular.model (shopping.train)
 
 # make predictions with the naive model
 shopping.test [, options.hat() := predict (fit, .SD), with = F]
 
+```
+
+```{r}
 # score the results
 accuracy.score (shopping.test)
 partial.accuracy.score (shopping.test)
+
 ```
 
 ### GBM Model
@@ -116,69 +120,79 @@ Also, I am treating each option value as a numeric value rather than a factor.  
 
 ```{r}
 
-# TODO use my "cache" function for there
+# create a train and test set
+shopping.train <- shopping [  train.index ]
+shopping.test  <- shopping [ -train.index ]
 
-fit.a <- gbm.model ("option.a", shopping.train)
-fit.b <- gbm.model ("option.b", shopping.train)
-fit.c <- gbm.model ("option.c", shopping.train)
-fit.d <- gbm.model ("option.d", shopping.train)
-fit.e <- gbm.model ("option.e", shopping.train)
-fit.f <- gbm.model ("option.f", shopping.train)
-fit.g <- gbm.model ("option.g", shopping.train)
-
-# TEMP
-saveRDS(fit.a, "fit.a.rds")
-saveRDS(fit.b, "fit.b.rds")
-saveRDS(fit.c, "fit.c.rds")
-saveRDS(fit.d, "fit.d.rds")
-saveRDS(fit.e, "fit.e.rds")
-saveRDS(fit.f, "fit.f.rds")
-saveRDS(fit.g, "fit.g.rds")
-
-
+# trains the model - caches the results which can be time consuming to compute
+gbm.fit.a <- cache ("gbm.fit.a", gbm.model ("option.a", shopping.train))
+gbm.fit.b <- cache ("gbm.fit.b", gbm.model ("option.b", shopping.train))
+gbm.fit.c <- cache ("gbm.fit.c", gbm.model ("option.c", shopping.train))
+gbm.fit.d <- cache ("gbm.fit.d", gbm.model ("option.d", shopping.train))
+gbm.fit.e <- cache ("gbm.fit.e", gbm.model ("option.e", shopping.train))
+gbm.fit.f <- cache ("gbm.fit.f", gbm.model ("option.f", shopping.train))
+gbm.fit.g <- cache ("gbm.fit.g", gbm.model ("option.g", shopping.train))
 ```
 
 How did the parameter tuning go?
 
 ```{r}
-ggplot(fit.a)
+ggplot(gbm.fit.a)
+ggplot(gbm.fit.b)
+ggplot(gbm.fit.c)
+ggplot(gbm.fit.d)
+ggplot(gbm.fit.e)
+ggplot(gbm.fit.f)
+ggplot(gbm.fit.g)
 ```
 
-Which predictors are most important?  The results seem to show that a customer shopping for a particular option is indicative of what they will eventually purchase.  Duh.
+Which predictors are most important?  The results seem to show that a customer shopping for a particular option is indicative of what they will eventually purchase.  In addition it does not seem like the selection across option types has any significant impact.  For example, the selection of option A.1 does not impact E.2 or anything like that.
 
 ```{r}
-plot (varImp (fit.a, scale = F), top = 10)
-plot (varImp (fit.b, scale = F), top = 10)
-plot (varImp (fit.c, scale = F), top = 10)
-plot (varImp (fit.d, scale = F), top = 10)
-plot (varImp (fit.e, scale = F), top = 10)
-plot (varImp (fit.f, scale = F), top = 10)
-plot (varImp (fit.g, scale = F), top = 10)
+plot (varImp (gbm.fit.a, scale = F), top = 10)
+plot (varImp (gbm.fit.b, scale = F), top = 10)
+plot (varImp (gbm.fit.c, scale = F), top = 10)
+plot (varImp (gbm.fit.d, scale = F), top = 10)
+plot (varImp (gbm.fit.e, scale = F), top = 10)
+plot (varImp (gbm.fit.f, scale = F), top = 10)
+plot (varImp (gbm.fit.g, scale = F), top = 10)
 ```
 
 Make predictions with the various models.
 
-```{r}
+```{r, results='hide'}
 
 # make predictions with each model
-shopping.test [, option.a.hat := predict (fit.a, .SD)]
-shopping.test [, option.b.hat := predict (fit.b, .SD)]
-shopping.test [, option.c.hat := predict (fit.c, .SD)]
-shopping.test [, option.d.hat := predict (fit.d, .SD)]
-shopping.test [, option.e.hat := predict (fit.e, .SD)]
-shopping.test [, option.f.hat := predict (fit.f, .SD)]
-shopping.test [, option.g.hat := predict (fit.g, .SD)]
+shopping.test [, option.a.hat := round (predict (gbm.fit.a, .SD))]
+shopping.test [, option.b.hat := round (predict (gbm.fit.b, .SD))]
+shopping.test [, option.c.hat := round (predict (gbm.fit.c, .SD))]
+shopping.test [, option.d.hat := round (predict (gbm.fit.d, .SD))]
+shopping.test [, option.e.hat := round (predict (gbm.fit.e, .SD))]
+shopping.test [, option.f.hat := round (predict (gbm.fit.f, .SD))]
+shopping.test [, option.g.hat := round (predict (gbm.fit.g, .SD))]
+```
 
+```{r}
 # score the results
 accuracy.score (shopping.test)
 partial.accuracy.score (shopping.test)
 ```
 
+The first results show a very poor all-or-nothing accuracy of <1% of points;  effectively only 3 were predicted correctly in the entire test set.  This is far poorer than even the Kaggle Naive model which simply chooses the options which were last shopped for.  
+
+### TODO
+
+Perhaps a difference value for each of the 'option.x.n' fields could be used.  Perhaps ones that applies a greater weight to more recent shopping history.
+
+### TODO 
+
+Each option is currently being treated as a numeric.  What if we treated these as factors so that its truly a classification problem?  
+
+### TODO 
+
+This takes care of the option elements of the shopping history, but how should the additional date-related 'day.of.week' and 'time.of.day.hours' fields be leveraged in the analysis.
 
 
-#### TODO: This takes care of the option elements of the shopping history, but how should the additional date-related 'day.of.week' and 'time.of.day.hours' fields be leveraged in the analysis.
-
-#### TODO: Perhaps a difference value for each of the 'option.x.n' fields could be used.  Perhaps ones that applies a greater weight to more recent shopping history.
 
 
 

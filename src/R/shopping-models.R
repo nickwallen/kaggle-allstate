@@ -3,9 +3,6 @@
 #
 # models the shopping history and predicts a single option using 'gbm'. 
 #
-# gbm.grid    the possible parameters used for tuning
-# index       enables a subset of the data to be used for training
-#
 gbm.model <- function (option,
                        train, 
                        interaction.depth = c(1, 5, 9),
@@ -25,10 +22,11 @@ gbm.model <- function (option,
 
 
 #
-# the naive model by which to compare all other models.  the naive model simply
-# selects the most popular option in the training data.
+# the popular model simply selects the most popular option in the training data.  
+# popularity simply determines how many times the customer base has looked at
+# a particular option in the shopping history.
 #
-naive.model <- function (data) {
+popular.model <- function (data) {
   
   # find the total number of customers who chose each option
   options <- rbindlist ( list (
@@ -46,16 +44,16 @@ naive.model <- function (data) {
   
   # return a representation of this model that can be passed to 'predict'
   model <- list (popular.options = popular.options)
-  class (model) <- "naive"
+  class (model) <- "popular.model"
   
   return (model)
 }
 
 #
-# creates predictions from a naive model built using the 'naive.model' function.
+# creates predictions from the "popular model" built using the 'popular.model' function.
 # this is an implementation of the generic function stats::predict.
 #
-predict.naive <- function (model, newdata) {
+predict.popular.model <- function (model, newdata) {
 
   # need a prediction for each customer
   customers <- newdata$customer.id
