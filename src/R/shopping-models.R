@@ -14,18 +14,12 @@ gbm.model <- function (option,
                        control           = trainControl (method = "cv", number = 5),
                        ...) {
 
-  # transforms the input data into a form that can be 'trained'
-  shopping <- flatten.shopping.history (train)
-  
-  # tunes the model parameters and trains a model
   fit <- train (x         = shopping [, 2:23, with = F ],
                 y         = shopping [[option]],
                 method    = "gbm", 
                 trControl = control,
                 tuneGrid  = expand.grid (interaction.depth = interaction.depth, n.trees = n.trees, shrinkage = shrinkage),
                 ... )
-  
-  return (fit)  
 }
 
 
