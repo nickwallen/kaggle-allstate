@@ -1,25 +1,23 @@
 
-
 #
 # models the shopping history and predicts a single option using 'gbm'. 
 #
 gbm.model <- function (option,
                        train, 
-                       interaction.depth = c(1, 5, 9),
-                       n.trees           = c(50, 100, 150, 200),
-                       shrinkage         = 0.1,
-                       control           = trainControl (method = "cv", number = 5),
+                       i.depth = c(1, 5, 9),
+                       n.trees = c(50, 100, 150, 200),
+                       shrink  = 0.1,
+                       control = trainControl (method = "cv", number = 5),
                        ...) {
-
-  fit <- train (x         = shopping [, 2:23, with = F ],
-                y         = shopping [[option]],
-                method    = "gbm", 
-                trControl = control,
-                tuneGrid  = expand.grid (interaction.depth = interaction.depth, n.trees = n.trees, shrinkage = shrinkage),
-                ... )
+  # tune and train the model
+  fit <- train (
+    method    = "gbm", 
+    trControl = control,
+    y         = shopping [[option]],
+    x         = shopping [, 2:23, with = F ],
+    tuneGrid  = expand.grid (interaction.depth = i.depth, n.trees = n.trees, shrinkage = shrink),
+    ... )
 }
-
-
 
 #
 # the popular model simply selects the most popular option in the training data.  
