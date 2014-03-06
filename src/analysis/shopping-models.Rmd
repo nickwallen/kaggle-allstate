@@ -91,7 +91,7 @@ dim (shopping.test)
 dim (shopping.train)
 ```
 
-### Modeling
+### Naive Model
 
 Let's first look at a naive model.  The naive model simply chooses the most popular option for each customer.
 
@@ -108,16 +108,34 @@ accuracy.score (shopping.test)
 partial.accuracy.score (shopping.test)
 ```
 
+### GBM Model
+
 My first attempt will focus on modeling and training each of the options (a-g) independently.  There are far fewer models in R that can, or at least make it easy, to handle multiple output in my experience.  Since we have no knowledge of what each option actually is and each may be some what unrelated (auto liability versus umbrella coverage) modeling them separately will likely help (or at least not hurt).
 
+Also, I am treating each option value as a numeric value rather than a factor.  Jacob is biz-snitch and not very confident in this approach. :/
+
 ```{r}
-fit.a <- gbm.model ("option.a", train)
-fit.b <- gbm.model ("option.b", train)
-fit.c <- gbm.model ("option.c", train)
-fit.d <- gbm.model ("option.d", train)
-fit.e <- gbm.model ("option.e", train)
-fit.f <- gbm.model ("option.f", train)
-fit.g <- gbm.model ("option.g", train)
+
+# TODO use my "cache" function for there
+
+fit.a <- gbm.model ("option.a", shopping.train)
+fit.b <- gbm.model ("option.b", shopping.train)
+fit.c <- gbm.model ("option.c", shopping.train)
+fit.d <- gbm.model ("option.d", shopping.train)
+fit.e <- gbm.model ("option.e", shopping.train)
+fit.f <- gbm.model ("option.f", shopping.train)
+fit.g <- gbm.model ("option.g", shopping.train)
+
+# TEMP
+saveRDS(fit.a, "fit.a.rds")
+saveRDS(fit.b, "fit.b.rds")
+saveRDS(fit.c, "fit.c.rds")
+saveRDS(fit.d, "fit.d.rds")
+saveRDS(fit.e, "fit.e.rds")
+saveRDS(fit.f, "fit.f.rds")
+saveRDS(fit.g, "fit.g.rds")
+
+
 ```
 
 How did the parameter tuning go?
@@ -130,6 +148,30 @@ Which predictors are most important?  The results seem to show that a customer s
 
 ```{r}
 plot (varImp (fit.a, scale = F), top = 10)
+plot (varImp (fit.b, scale = F), top = 10)
+plot (varImp (fit.c, scale = F), top = 10)
+plot (varImp (fit.d, scale = F), top = 10)
+plot (varImp (fit.e, scale = F), top = 10)
+plot (varImp (fit.f, scale = F), top = 10)
+plot (varImp (fit.g, scale = F), top = 10)
+```
+
+Make predictions with the various models.
+
+```{r}
+
+# make predictions with each model
+shopping.test [, option.a.hat := predict (fit.a, .SD)]
+shopping.test [, option.b.hat := predict (fit.b, .SD)]
+shopping.test [, option.c.hat := predict (fit.c, .SD)]
+shopping.test [, option.d.hat := predict (fit.d, .SD)]
+shopping.test [, option.e.hat := predict (fit.e, .SD)]
+shopping.test [, option.f.hat := predict (fit.f, .SD)]
+shopping.test [, option.g.hat := predict (fit.g, .SD)]
+
+# score the results
+accuracy.score (shopping.test)
+partial.accuracy.score (shopping.test)
 ```
 
 
