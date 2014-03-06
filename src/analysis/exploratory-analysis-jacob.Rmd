@@ -12,12 +12,12 @@ train <- fetch()
 ```
 
 
-Frequency of Each Product Variation
+Frequency of Each Plan Variation
 
 ``` {r count.plans}
 
-train[, product := paste0(option.a,option.b,option.c,option.d,option.e,option.f,option.g)]
-ct.prod <- train[, list(ct = length(customer.id)),by=product]
+train[, plan := paste0(option.a,option.b,option.c,option.d,option.e,option.f,option.g)]
+ct.prod <- train[, list(ct = length(customer.id)),by=plan]
 ggplot(ct.prod,aes(ct))+geom_histogram()
 
 ggplot(ct.prod,aes(ct))+stat_ecdf()

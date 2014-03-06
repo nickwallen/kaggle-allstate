@@ -17,7 +17,7 @@ add.shopping.duration <- function (data) {
   # where shopping point = 3, the first is 1 and the last is 3.
   shopping.pts <- data [, list (
     customer.id,
-    shopping.pt.first = 1,
+    shopping.pt.first = as.integer(1),
     shopping.pt.last = shopping.pt
   )]
   
@@ -49,20 +49,24 @@ add.shopping.duration <- function (data) {
 }
 
 # 
-# a product is a chosen set of options.  There are 2,304 unique products 
+# a Plan is a chosen set of options.  There are 2,304 unique products 
 # (3*2*4*3*2*4*4).
 #
-add.product <- function (data) {
-
-  data [, product := paste0 (option.a, option.b, option.c, option.d, 
-                             option.e, option.f, option.g )]
+add.plan <- function (data) {
+  data [, plan := paste0 (option.a, option.b, option.c, option.d, 
+                          option.e, option.f, option.g )]
+  
+  # make explicit that the input data is modified in-place
+  return (NULL)
 }
 
 # 
 # create a single feature that represents all of the predicted options; aka product.hat
 #
-add.product.hat <- function (data) {
-  
-  data [, product.hat := paste0 (option.a.hat, option.b.hat, option.c.hat, option.d.hat, 
-                                 option.e.hat, option.f.hat, option.g.hat ) ]
+add.plan.hat <- function (data) {
+  data [, plan.hat := paste0 (option.a.hat, option.b.hat, option.c.hat, option.d.hat, 
+                              option.e.hat, option.f.hat, option.g.hat ) ]
+
+  # make explicit that the input data is modified in-place
+  return (NULL)
 }

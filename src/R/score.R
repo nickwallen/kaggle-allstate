@@ -12,13 +12,13 @@ accuracy.score <- function (data) {
     stop ("missing option fields in the input")
   }
   
-  # collapse the set of options [a-g] into a single 'product'
-  add.product (data)
-  add.product.hat (data)
+  # collapse the set of options [a-g] into a single 'Plan'
+  add.plan (data)
+  add.plan.hat (data)
   
   # each of the options must be predicted accurately to receive credit
-  data [ product == product.hat, score := 1]
-  data [ product != product.hat, score := 0]
+  data [ plan == plan.hat, score := 1]
+  data [ plan != plan.hat, score := 0]
   
   # the percentage of correct predictions in the data
   accuracy <- sum (data$score) / nrow (data)

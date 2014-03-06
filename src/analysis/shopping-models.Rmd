@@ -75,13 +75,13 @@ rm (data)
 
 ### Splitting
 
-Split the data into a training and a hold-out test set.  Each set must be representative of the whole.  Use Caret's createDataPartition function for this.  Since this function requires a single outcome variable, create a 'product' representation of the options to allow it to do so.
+Split the data into a training and a hold-out test set.  Each set must be representative of the whole.  Use Caret's createDataPartition function for this.  Since this function requires a single outcome variable, create a 'Plan' representation of the options to allow it to do so.
 
 ```{r}
 
 # use the 'product' attribute to split the data into representative test/train sets
-add.product (shopping)
-train.index <- createDataPartition (shopping$product, p = 0.8, list = F)[,1]
+add.plan (shopping)
+train.index <- createDataPartition (shopping$plan, p = 0.8, list = F)[,1]
 
 # create a train and test set
 shopping.train <- shopping [  train.index ]
