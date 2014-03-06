@@ -11,6 +11,7 @@ cache <- function (cache.name,
                    cache.ignore      = getOption("cache.ignore", default = F),
                    cache.compress    = getOption("cache.compress", default = T),
                    on.missing.result = getOption("on.missing.result", default = warning)) {
+  require (logging)
   
   result <- NULL
   cache.file <- sprintf ("%s/%s.rds", cache.dir, cache.name)
