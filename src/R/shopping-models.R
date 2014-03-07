@@ -13,7 +13,7 @@ gbm.model <- function (option,
   fit <- train (
     method    = "gbm", 
     trControl = control,
-    y         = shopping [[option]],
+    y         = as.factor (shopping [[option]]),
     x         = shopping [, 2:23, with = F ],
     tuneGrid  = expand.grid (interaction.depth = i.depth, n.trees = n.trees, shrinkage = shrink),
     ... )

@@ -188,6 +188,48 @@ Perhaps a difference value for each of the 'option.x.n' fields could be used.  P
 
 Each option is currently being treated as a numeric.  What if we treated these as factors so that its truly a classification problem?  
 
+```{r}
+
+# create a train and test set
+shopping.train <- shopping [  train.index ]
+shopping.test  <- shopping [ -train.index ]
+
+# TODO convert to a factor out here?
+
+# trains the model - caches the results which can be time consuming to compute
+gbm.fit.a <- cache ("gbm.fit.a", gbm.model ("option.a", shopping.train))
+gbm.fit.b <- cache ("gbm.fit.b", gbm.model ("option.b", shopping.train))
+gbm.fit.c <- cache ("gbm.fit.c", gbm.model ("option.c", shopping.train))
+gbm.fit.d <- cache ("gbm.fit.d", gbm.model ("option.d", shopping.train))
+gbm.fit.e <- cache ("gbm.fit.e", gbm.model ("option.e", shopping.train))
+gbm.fit.f <- cache ("gbm.fit.f", gbm.model ("option.f", shopping.train))
+gbm.fit.g <- cache ("gbm.fit.g", gbm.model ("option.g", shopping.train))
+
+# make predictions with each model
+shopping.test [, `:=` (
+  option.a.hat = predict (gbm.fit.a, .SD),
+  option.b.hat = predict (gbm.fit.b, .SD),
+  option.c.hat = predict (gbm.fit.c, .SD),
+  option.d.hat = predict (gbm.fit.d, .SD),
+  option.e.hat = predict (gbm.fit.e, .SD),
+  option.f.hat = predict (gbm.fit.f, .SD),
+  option.g.hat = predict (gbm.fit.g, .SD)
+  ), .SDcols = 2:23 ]
+
+# score the results
+accuracy.score (shopping.test)
+partial.accuracy.score (shopping.test)
+
+with (shopping.test, confusionMatrix(option.a.hat, option.a))
+with (shopping.test, confusionMatrix(option.b.hat, option.b))
+with (shopping.test, confusionMatrix(option.c.hat, option.c))
+with (shopping.test, confusionMatrix(option.d.hat, option.d))
+with (shopping.test, confusionMatrix(option.e.hat, option.e))
+with (shopping.test, confusionMatrix(option.f.hat, option.f))
+with (shopping.test, confusionMatrix(option.g.hat, option.g))
+
+```
+
 ### TODO 
 
 This takes care of the option elements of the shopping history, but how should the additional date-related 'day.of.week' and 'time.of.day.hours' fields be leveraged in the analysis.
