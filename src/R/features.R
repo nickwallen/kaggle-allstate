@@ -70,3 +70,42 @@ add.plan.hat <- function (data) {
   # make explicit that the input data is modified in-place
   return (NULL)
 }
+
+#
+# converts all of the options from int/numeric to factors
+#
+options.as.factors <- function (data) {
+  
+  data [, `:=` (
+    option.a = factor (option.a, levels = option.a.levels()),
+    option.b = factor (option.b, levels = option.b.levels()),
+    option.c = factor (option.c, levels = option.c.levels()),
+    option.d = factor (option.d, levels = option.d.levels()),
+    option.e = factor (option.e, levels = option.e.levels()),
+    option.f = factor (option.f, levels = option.f.levels()),
+    option.g = factor (option.g, levels = option.g.levels())
+  )]
+  
+  # updates made in-place
+  return (NULL)
+}
+
+#
+# converts all of the options from factors to int/numerics
+#
+options.as.numeric <- function (data) {
+  
+  data [, `:=` (
+    option.a = as.numeric (as.character (option.a)),
+    option.b = as.numeric (as.character (option.b)),
+    option.c = as.numeric (as.character (option.c)),
+    option.d = as.numeric (as.character (option.d)),
+    option.e = as.numeric (as.character (option.e)),
+    option.f = as.numeric (as.character (option.f)),
+    option.g = as.numeric (as.character (option.g))
+  )]
+  
+  # updates made in-place
+  return (NULL)
+}
+
