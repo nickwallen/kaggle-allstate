@@ -29,3 +29,15 @@ options <- function () {
 non.options <- function (data) {
   setdiff(names(data), options())
 }
+
+#
+# defines all of the valid 'levels' for each option
+#
+option.a.levels <- function () c(0, 1, 2)
+option.b.levels <- function () c(0, 1)
+option.c.levels <- function () c(1, 2, 3, 4)
+option.d.levels <- function () c(1, 2, 3)
+option.e.levels <- function () c(0, 1)
+option.f.levels <- function () c(0, 1, 2, 3)
+option.g.levels <- function () c(1, 2, 3, 4)
+
