@@ -1,3 +1,5 @@
 *.md
 *.html
 .cache
+figure
+*.rds
