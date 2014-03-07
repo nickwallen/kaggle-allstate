@@ -67,11 +67,10 @@ Does this work??  It does!  That wasy easy.
 data <- fetch()
 
 # flatten the source into a form that can be used for training
-shopping <- flatten.shopping.history (data)
+shopping <- extract.shopping.history (data)
 
 # what do we have here?
 str (shopping)
-rm (data)
 ```
 
 ### Splitting
@@ -119,6 +118,23 @@ My first attempt will focus on modeling and training each of the options (a-g) i
 Also, I am treating each option value as a numeric value rather than a factor.  Jacob is biz-snitch and not very confident in this approach. :/
 
 ```{r}
+
+gbm.model <- function (option,
+                       train, 
+                       i.depth = c(1, 5, 9),
+                       n.trees = c(50, 100, 150, 200),
+                       shrink  = 0.1,
+                       control = trainControl (method = "cv", number = 5),
+                       ...) {
+  # tune and train the model
+  fit <- train (
+    method    = "gbm", 
+    trControl = control,
+    y         = shopping [[option]],
+    x         = shopping [, 2:23, with = F ],
+    tuneGrid  = expand.grid (interaction.depth = i.depth, n.trees = n.trees, shrinkage = shrink),
+    ... )
+}
 
 # create a train and test set
 shopping.train <- shopping [  train.index ]
@@ -188,52 +204,101 @@ Perhaps a difference value for each of the 'option.x.n' fields could be used.  P
 
 Each option is currently being treated as a numeric.  What if we treated these as factors so that its truly a classification problem?  
 
+Create a partial function to populate some of the required parameters that won't change
+
 ```{r}
+# create a partial function to make creating multiple models simpler
+train.shopping <- function (method, data, ..., option = "option.a") {
+  
+  train (method = method, 
+         y = data [[option]], 
+         x = data [, 2:23, with = F ],
+         trControl = trainControl (method = "cv", number = 3),
+         ... )
+}
+```
+
+A tree-based model that uses pseudo-regression where options are treated as numerics.
+
+```{r}
+
+# flatten the source into a form that can be used for training
+shopping <- extract.shopping.history (data)
 
 # create a train and test set
 shopping.train <- shopping [  train.index ]
 shopping.test  <- shopping [ -train.index ]
 
-# TODO convert to a factor out here?
+# treat each of the option as numeric; pseudo-regression
+options.as.numeric (shopping.train)
+optoins.as.numeric (shopping.test)
 
-# trains the model - caches the results which can be time consuming to compute
-gbm.fit.a <- cache ("gbm.fit.a", gbm.model ("option.a", shopping.train))
-gbm.fit.b <- cache ("gbm.fit.b", gbm.model ("option.b", shopping.train))
-gbm.fit.c <- cache ("gbm.fit.c", gbm.model ("option.c", shopping.train))
-gbm.fit.d <- cache ("gbm.fit.d", gbm.model ("option.d", shopping.train))
-gbm.fit.e <- cache ("gbm.fit.e", gbm.model ("option.e", shopping.train))
-gbm.fit.f <- cache ("gbm.fit.f", gbm.model ("option.f", shopping.train))
-gbm.fit.g <- cache ("gbm.fit.g", gbm.model ("option.g", shopping.train))
+# tree-based pseudo-regression where options are numerics
+gbm.grid <- expand.grid (interaction.depth = c(1, 5, 9), n.trees = c(50, 100, 150, 200), shrinkage = 0.1)
+fit.gbm.regress <- train.shopping ("gbm", shopping.train, tuneGrid = gbm.grid)
 
-# make predictions with each model
-shopping.test [, `:=` (
-  option.a.hat = predict (gbm.fit.a, .SD),
-  option.b.hat = predict (gbm.fit.b, .SD),
-  option.c.hat = predict (gbm.fit.c, .SD),
-  option.d.hat = predict (gbm.fit.d, .SD),
-  option.e.hat = predict (gbm.fit.e, .SD),
-  option.f.hat = predict (gbm.fit.f, .SD),
-  option.g.hat = predict (gbm.fit.g, .SD)
-  ), .SDcols = 2:23 ]
+# make a prediction
+shopping.test [, option.a.hat := round (predict (fit.gbm.regress, .SD)), .SDcols = 2:23 ]
 
-# score the results
-accuracy.score (shopping.test)
-partial.accuracy.score (shopping.test)
+result.1 <- with (shopping.test, confusionMatrix(option.a.hat, option.a))
+```
 
-with (shopping.test, confusionMatrix(option.a.hat, option.a))
-with (shopping.test, confusionMatrix(option.b.hat, option.b))
-with (shopping.test, confusionMatrix(option.c.hat, option.c))
-with (shopping.test, confusionMatrix(option.d.hat, option.d))
-with (shopping.test, confusionMatrix(option.e.hat, option.e))
-with (shopping.test, confusionMatrix(option.f.hat, option.f))
-with (shopping.test, confusionMatrix(option.g.hat, option.g))
+A tree-based classification model where each option has a fixed set of possible classes.
+
+```{r}
+
+# flatten the source into a form that can be used for training
+shopping <- extract.shopping.history (data)
+
+# create a train and test set
+shopping.train <- shopping [  train.index ]
+shopping.test  <- shopping [ -train.index ]
+
+# treat this as a classification problem
+options.as.factors (shopping.train)
+options.as.factors (shopping.test)
+
+# tree-based classification
+gbm.grid <- expand.grid (interaction.depth = c(1, 5, 9), n.trees = c(50, 100, 150, 200), shrinkage = 0.1)
+fit.gbm.class <- train.shopping ("gbm", shopping.train, tuneGrid = gbm.grid)
+
+# make a prediction
+shopping.test [, option.a.hat := predict (fit.gbm.class, .SD), .SDcols = 2:23 ]
+
+result.2 <- with (shopping.test, confusionMatrix(option.a.hat, option.a))
 
 ```
+
+A tree-based classification model where each option has a fixed set of possible classes.  Using a mean over a sum.
+
+```{r}
+
+# flatten the source into a form that can be used for training
+shopping <- extract.shopping.history (data, mean)
+
+# create a train and test set
+shopping.train <- shopping [  train.index ]
+shopping.test  <- shopping [ -train.index ]
+
+# treat this as a classification problem
+options.as.factors (shopping.train)
+options.as.factors (shopping.test)
+
+# tree-based classification
+gbm.grid <- expand.grid (interaction.depth = c(5, 9), n.trees = c(100, 150), shrinkage = 0.1)
+fit.gbm.class <- train.shopping ("gbm", shopping.train, tuneGrid = gbm.grid)
+
+# make a prediction
+shopping.test [, option.a.hat := predict (fit.gbm.class, .SD), .SDcols = 2:23 ]
+
+result.3 <- with (shopping.test, confusionMatrix(option.a.hat, option.a))
+
+```
+
 
 ### TODO 
 
 This takes care of the option elements of the shopping history, but how should the additional date-related 'day.of.week' and 'time.of.day.hours' fields be leveraged in the analysis.
-
 
 
 
