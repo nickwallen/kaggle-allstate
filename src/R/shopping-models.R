@@ -61,7 +61,7 @@ predict.popular.model <- function (model, newdata) {
 # used for training and prediction.  the summarize function can be changed to 
 # summarize the shopping history in different ways.
 #
-extract.shopping.history <- function (data, summarize.f = sum) {
+extract.shopping.history <- function (data, summarize.func = sum) {
   
   # extract only the shopping records
   shopping <- data [record.type == "shopping"]
@@ -70,11 +70,11 @@ extract.shopping.history <- function (data, summarize.f = sum) {
   dummies <- dummyVars (~ option.a + option.b + option.c + option.d + option.e + option.f + option.g, shopping)
   shopping <- data.table (customer.id = shopping$customer.id, predict (dummies, shopping))
   
-  # add up the number of times a customer shopped for each option
-  shopping <- shopping [, lapply(.SD, summarize.f), by = customer.id ]
+  # summarize the options which were shopped for using summarize.func
+  shopping <- shopping [, lapply(.SD, summarize.func), by = customer.id ]
   setkey (shopping, "customer.id")
   
-  # which options to the shopper actually purchase?
+  # which options does the shopper actually purchase?
   purchase <- data [ record.type == "purchase", c("customer.id", options()), with = FALSE ]
   setkey (purchase, "customer.id")
   
@@ -89,7 +89,10 @@ extract.shopping.history <- function (data, summarize.f = sum) {
                              option.e = option.e, 
                              option.f = option.f, 
                              option.g = option.g) ]
+  
+  # convert back to factors after the data is merged
   options.as.factors (shopping)
   
   return (shopping)
 }
+
