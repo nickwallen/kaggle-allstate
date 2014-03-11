@@ -6,6 +6,7 @@ library (reshape2)
 library (lubridate)
 library (stringr)
 library (caret)
+library (gridExtra)
 
 source ("../R/fetch.R")
 source ("../R/features.R")
@@ -59,30 +60,8 @@ The definition for each of these fields is as follows.
 | *option.a*    | The outcome for option a that is being predicted.  The value for this field comes from the purchase record.
 | *option.b*    | ...
 
-Does this work??  It does!  That wasy easy.
-
-```{r}
-
-# fetch the source data
+```{r, include=F}
 data <- fetch()
-
-# flatten the source into a form that can be used for training
-shopping <- extract.shopping.history (data)
-
-# what do we have here?
-str (shopping)
-```
-
-### Splitting
-
-Split the data into a training and a hold-out test set.  Each set must be representative of the whole.  Use Caret's createDataPartition function for this.  Since this function requires a single outcome variable, create a 'Plan' representation of the options to allow it to do so.
-
-```{r}
-
-# use the 'product' attribute to split the data into representative test/train sets
-add.plan (shopping)
-train.index <- createDataPartition (shopping$plan, p = 0.8, list = F)[,1]
-
 ```
 
 ### Popular Model
@@ -90,7 +69,10 @@ train.index <- createDataPartition (shopping$plan, p = 0.8, list = F)[,1]
 Let's first look at a popular model.  The popular model simply chooses the option that has been shopped for by most
 customers.  If a customer looks at the same option multiple times, then the option receives multiple votes.
 
-```{r, results='hide'}
+```{r popular.model, results='hide'}
+
+# sums the number of times a customer has shopped for a particular option (A0, A1, A2, ..., B0, B1, ...)
+shopping <- extract.shopping.history (data, sum)
 
 # create a train and test set
 shopping.train <- shopping [  train.index ]
@@ -104,197 +86,131 @@ shopping.test [, options.hat() := predict (fit, .SD), with = F]
 
 ```
 
-```{r}
+How did the popular model perform?
+
+```{r popular.model.score}
+
 # score the results
 accuracy.score (shopping.test)
 partial.accuracy.score (shopping.test)
 
 ```
 
-### GBM Model
+Take a closer look using a confusion matrix for each option.
 
-My first attempt will focus on modeling and training each of the options (a-g) independently.  There are far fewer models in R that can, or at least make it easy, to handle multiple output in my experience.  Since we have no knowledge of what each option actually is and each may be some what unrelated (auto liability versus umbrella coverage) modeling them separately will likely help (or at least not hurt).
+```{r popular.model.confusion.matrix}
+with (shopping.test, confusionMatrix(option.a.hat, option.a))
+with (shopping.test, confusionMatrix(option.b.hat, option.b))
+with (shopping.test, confusionMatrix(option.c.hat, option.c))
+with (shopping.test, confusionMatrix(option.d.hat, option.d))
+with (shopping.test, confusionMatrix(option.e.hat, option.e))
+with (shopping.test, confusionMatrix(option.f.hat, option.f))
+with (shopping.test, confusionMatrix(option.g.hat, option.g))
+```
 
-Also, I am treating each option value as a numeric value rather than a factor.  Jacob is biz-snitch and not very confident in this approach. :/
+### Shopping Counts
 
-```{r}
+This model uses a classification tree to predict the final purchased option based on the number of times that customer has shopped for a particular valid option.  In addition, each option (a-g) is modeled separately.
 
-gbm.model <- function (option,
-                       train, 
-                       i.depth = c(1, 5, 9),
-                       n.trees = c(50, 100, 150, 200),
-                       shrink  = 0.1,
-                       control = trainControl (method = "cv", number = 5),
-                       ...) {
-  # tune and train the model
-  fit <- train (
-    method    = "gbm", 
-    trControl = control,
-    y         = shopping [[option]],
-    x         = shopping [, 2:23, with = F ],
-    tuneGrid  = expand.grid (interaction.depth = i.depth, n.trees = n.trees, shrinkage = shrink),
-    ... )
-}
+```{r shopping.counts.model}
+
+# passing 'sum' will simply count the number of times a customer has shopped for an option
+shopping <- extract.shopping.history (data, sum)
+
+# split the data into representative test/train sets
+add.plan (shopping)
+train.index <- createDataPartition (shopping$plan, p = 0.8, list = F)[,1]
 
 # create a train and test set
 shopping.train <- shopping [  train.index ]
 shopping.test  <- shopping [ -train.index ]
 
-# trains the model - caches the results which can be time consuming to compute
-gbm.fit.a <- cache ("gbm.fit.a", gbm.model ("option.a", shopping.train))
-gbm.fit.b <- cache ("gbm.fit.b", gbm.model ("option.b", shopping.train))
-gbm.fit.c <- cache ("gbm.fit.c", gbm.model ("option.c", shopping.train))
-gbm.fit.d <- cache ("gbm.fit.d", gbm.model ("option.d", shopping.train))
-gbm.fit.e <- cache ("gbm.fit.e", gbm.model ("option.e", shopping.train))
-gbm.fit.f <- cache ("gbm.fit.f", gbm.model ("option.f", shopping.train))
-gbm.fit.g <- cache ("gbm.fit.g", gbm.model ("option.g", shopping.train))
+# defines how the parameter tuning will occur
+control <- trainControl (method = "cv", number = 2)
+
+# which model parameters will be tuned?
+tune.grid <- expand.grid (
+  n.trees           = c(50, 100, 200), 
+  shrinkage         = 0.1,
+  interaction.depth = c(1, 5, 9))
+
+# tune/train a separate model for each option
+models <- lapply (options(), function (option) {
+  train (
+    method    = "gbm", 
+    trControl = control,
+    y         = shopping.train [[option]],
+    x         = shopping.train [, 2:23, with = F],
+    tuneGrid  = tune.grid )
+})
+
+# name each of the models in the list
+names(models) <- options.hat()
+
 ```
 
 How did the parameter tuning go?
 
-```{r}
-ggplot(gbm.fit.a)
-ggplot(gbm.fit.b)
-ggplot(gbm.fit.c)
-ggplot(gbm.fit.d)
-ggplot(gbm.fit.e)
-ggplot(gbm.fit.f)
-ggplot(gbm.fit.g)
+```{r shopping.counts.tuning}
+
+# create tuning plots for each model
+plots <- lapply (models, function (m) ggplot (m))
+
+# draw each of the plots on the same canvas
+do.call(grid.arrange,  plots)
+
 ```
 
 Which predictors are most important?  The results seem to show that a customer shopping for a particular option is indicative of what they will eventually purchase.  In addition it does not seem like the selection across option types has any significant impact.  For example, the selection of option A.1 does not impact E.2 or anything like that.
 
-```{r}
-plot (varImp (gbm.fit.a, scale = F), top = 10)
-plot (varImp (gbm.fit.b, scale = F), top = 10)
-plot (varImp (gbm.fit.c, scale = F), top = 10)
-plot (varImp (gbm.fit.d, scale = F), top = 10)
-plot (varImp (gbm.fit.e, scale = F), top = 10)
-plot (varImp (gbm.fit.f, scale = F), top = 10)
-plot (varImp (gbm.fit.g, scale = F), top = 10)
+```{r shopping.counts.importance.plots}
+
+# create variable importance plots for each model
+plots <- lapply (models, function (m) plot (varImp (m, scale = F), top = 10))
+
+# draw each of the plots on the same canvas
+do.call(grid.arrange,  plots)
+
 ```
 
 Make predictions with the various models.
 
-```{r, results='hide'}
+```{r shopping.counts.predictions, results='hide'}
 
-# make predictions with each model
-shopping.test [, option.a.hat := round (predict (gbm.fit.a, .SD))]
-shopping.test [, option.b.hat := round (predict (gbm.fit.b, .SD))]
-shopping.test [, option.c.hat := round (predict (gbm.fit.c, .SD))]
-shopping.test [, option.d.hat := round (predict (gbm.fit.d, .SD))]
-shopping.test [, option.e.hat := round (predict (gbm.fit.e, .SD))]
-shopping.test [, option.f.hat := round (predict (gbm.fit.f, .SD))]
-shopping.test [, option.g.hat := round (predict (gbm.fit.g, .SD))]
-```
+for (option.hat in names (models)) {
 
-```{r}
-# score the results
-accuracy.score (shopping.test)
-partial.accuracy.score (shopping.test)
-```
-
-The first results show a very poor all-or-nothing accuracy of <1% of points;  effectively only 3 were predicted correctly in the entire test set.  This is far poorer than even the Kaggle Naive model which simply chooses the options which were last shopped for.  
-
-### TODO
-
-Perhaps a difference value for each of the 'option.x.n' fields could be used.  Perhaps ones that applies a greater weight to more recent shopping history.
-
-### TODO 
-
-Each option is currently being treated as a numeric.  What if we treated these as factors so that its truly a classification problem?  
-
-Create a partial function to populate some of the required parameters that won't change
-
-```{r}
-# create a partial function to make creating multiple models simpler
-train.shopping <- function (method, data, ..., option = "option.a") {
-  
-  train (method = method, 
-         y = data [[option]], 
-         x = data [, 2:23, with = F ],
-         trControl = trainControl (method = "cv", number = 3),
-         ... )
+  # make a prediction for each option
+  model <- models[[option.hat]]
+  shopping.test [, option.hat := predict (model, .SD), .SDcols = 2:23, with = FALSE ]
 }
 ```
 
-A tree-based model that uses pseudo-regression where options are treated as numerics.
+How accurate are the predictions?
 
-```{r}
+```{r shopping.counts.accuracy}
 
-# flatten the source into a form that can be used for training
-shopping <- extract.shopping.history (data)
-
-# create a train and test set
-shopping.train <- shopping [  train.index ]
-shopping.test  <- shopping [ -train.index ]
-
-# treat each of the option as numeric; pseudo-regression
-options.as.numeric (shopping.train)
-optoins.as.numeric (shopping.test)
-
-# tree-based pseudo-regression where options are numerics
-gbm.grid <- expand.grid (interaction.depth = c(1, 5, 9), n.trees = c(50, 100, 150, 200), shrinkage = 0.1)
-fit.gbm.regress <- train.shopping ("gbm", shopping.train, tuneGrid = gbm.grid)
-
-# make a prediction
-shopping.test [, option.a.hat := round (predict (fit.gbm.regress, .SD)), .SDcols = 2:23 ]
-
-result.1 <- with (shopping.test, confusionMatrix(option.a.hat, option.a))
-```
-
-A tree-based classification model where each option has a fixed set of possible classes.
-
-```{r}
-
-# flatten the source into a form that can be used for training
-shopping <- extract.shopping.history (data)
-
-# create a train and test set
-shopping.train <- shopping [  train.index ]
-shopping.test  <- shopping [ -train.index ]
-
-# treat this as a classification problem
-options.as.factors (shopping.train)
-options.as.factors (shopping.test)
-
-# tree-based classification
-gbm.grid <- expand.grid (interaction.depth = c(1, 5, 9), n.trees = c(50, 100, 150, 200), shrinkage = 0.1)
-fit.gbm.class <- train.shopping ("gbm", shopping.train, tuneGrid = gbm.grid)
-
-# make a prediction
-shopping.test [, option.a.hat := predict (fit.gbm.class, .SD), .SDcols = 2:23 ]
-
-result.2 <- with (shopping.test, confusionMatrix(option.a.hat, option.a))
+# score the results
+accuracy.score (shopping.test)
+partial.accuracy.score (shopping.test)
 
 ```
 
-A tree-based classification model where each option has a fixed set of possible classes.  Using a mean over a sum.
+Take a closer look using a confusion matrix for each option.
 
-```{r}
+```{r shopping.counts.confusion.matrix}
 
-# flatten the source into a form that can be used for training
-shopping <- extract.shopping.history (data, mean)
-
-# create a train and test set
-shopping.train <- shopping [  train.index ]
-shopping.test  <- shopping [ -train.index ]
-
-# treat this as a classification problem
-options.as.factors (shopping.train)
-options.as.factors (shopping.test)
-
-# tree-based classification
-gbm.grid <- expand.grid (interaction.depth = c(5, 9), n.trees = c(100, 150), shrinkage = 0.1)
-fit.gbm.class <- train.shopping ("gbm", shopping.train, tuneGrid = gbm.grid)
-
-# make a prediction
-shopping.test [, option.a.hat := predict (fit.gbm.class, .SD), .SDcols = 2:23 ]
-
-result.3 <- with (shopping.test, confusionMatrix(option.a.hat, option.a))
-
+with (shopping.test, confusionMatrix(option.a.hat, option.a))
+with (shopping.test, confusionMatrix(option.b.hat, option.b))
+with (shopping.test, confusionMatrix(option.c.hat, option.c))
+with (shopping.test, confusionMatrix(option.d.hat, option.d))
+with (shopping.test, confusionMatrix(option.e.hat, option.e))
+with (shopping.test, confusionMatrix(option.f.hat, option.f))
+with (shopping.test, confusionMatrix(option.g.hat, option.g))
 ```
 
+### TODO
+
+Perhaps a difference value for each of the 'option.x.n' fields could be used.  Perhaps ones that applies a greater weight to more recent shopping history or the mean instead of the sum.
 
 ### TODO 
 
