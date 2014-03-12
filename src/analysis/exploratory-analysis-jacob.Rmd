@@ -8,6 +8,7 @@ library(randomForest)
 library(caret)
 library(data.table)
 library(e1071)
+library(kernlab)
 source ("../R/fetch.R")
 source ("../R/utils.R")
 source ("../R/features.R")
@@ -36,6 +37,9 @@ Build Model Based only on Customer Attributes & Purchase Points
 ```{r cust.model,message=FALSE}
 buy <- train[record.type == "purchase"]
 
+# subset data set for faster training
+subset.index <- createDataPartition(y= buy$plan, p=.05,list=FALSE)[,1]
+buy <- buy[subset.index]
 
 # create a train and test set
 train.index <- createDataPartition(y= buy$plan, p=.80,list=FALSE)[,1]
@@ -43,23 +47,23 @@ cust.train <- buy[train.index]
 cust.test  <- buy[-train.index]
 
 # defines how the parameter tuning will occur
-control <- trainControl (method = "cv", number = 2)
+control <- trainControl (method = "cv", number = 4)
 
 # which model parameters will be tuned?
 tune.grid <- expand.grid (
-  mtry      = c(4,6))
+    C = 1)
 
 models <- lapply(options(), function(option) {
   train(
-    method    = "rf",
+    method    = "svmLinear",
     trControl = control,
     y         = cust.train[[option]],
-    x         = cust.train[,c(2,4,6,9:18,26), with = FALSE], 
+    x         = cust.train[,c(2,4,10,12,13,16:18), with = FALSE], 
     tuneGrid  = tune.grid,
-    sampsize  = 5000,
-    ntree     = 200)
+    type      = "C-svc")
 })
 ```
+
 
 Make predictions with the various models
 ```{r}
