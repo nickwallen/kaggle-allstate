@@ -91,6 +91,25 @@ options.as.factors <- function (data) {
 }
 
 #
+# converts all of the options from int/numeric to factors
+#
+options.hat.as.factors <- function (data) {
+  
+  data [, `:=` (
+    option.a.hat = factor (option.a.hat, levels = option.a.levels()),
+    option.b.hat = factor (option.b.hat, levels = option.b.levels()),
+    option.c.hat = factor (option.c.hat, levels = option.c.levels()),
+    option.d.hat = factor (option.d.hat, levels = option.d.levels()),
+    option.e.hat = factor (option.e.hat, levels = option.e.levels()),
+    option.f.hat = factor (option.f.hat, levels = option.f.levels()),
+    option.g.hat = factor (option.g.hat, levels = option.g.levels())
+  )]
+  
+  # updates made in-place
+  return (NULL)
+}
+
+#
 # converts all of the options from factors to int/numerics
 #
 options.as.numeric <- function (data) {
