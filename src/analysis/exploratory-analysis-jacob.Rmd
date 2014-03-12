@@ -47,22 +47,23 @@ control <- trainControl (method = "cv", number = 2)
 
 # which model parameters will be tuned?
 tune.grid <- expand.grid (
-  #ntree           = c(100, 200), 
-  mtry         = c(2,4,6,8,10))
-
+  mtry      = c(4,6))
 
 models <- lapply(options(), function(option) {
   train(
     method    = "rf",
     trControl = control,
     y         = cust.train[[option]],
-    x         = c(2,4,6,9:18,26), 
-    tuneGrid  = tune.grid)
+    x         = cust.train[,c(2,4,6,9:18,26), with = FALSE], 
+    tuneGrid  = tune.grid,
+    sampsize  = 5000,
+    ntree     = 200)
 })
 ```
 
 Make predictions with the various models
 ```{r}
+names(models) <- options.hat()
 
 for (option.hat in names(models)) {
 
