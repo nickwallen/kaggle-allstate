@@ -21,9 +21,7 @@ fetch <- function (train = TRUE) {
   setnames (train, "day",        "day.of.week")
   setnames (train, "time",       "time.of.day")
   setnames (train, "c.previous", "option.c.previous")
-  setnames (train, 
-            c("a","b","c","d","e","f","g"), 
-            c("option.a","option.b","option.c","option.d","option.e","option.f","option.g"))
+  setnames (train, c("a","b","c","d","e","f","g"), options())
   
   # clean-up the data types
   train [, `:=` (
@@ -51,27 +49,35 @@ fetch <- function (train = TRUE) {
     homeowner         = factor (homeowner,      levels = 0:1, labels = c("no","yes")),
     record.type       = factor (record.type,    levels = 0:1, labels = c("shopping","purchase")),
     married.couple    = factor (married.couple, levels = 0:1, labels = c("no","yes"))
-
   )]
   
-  
-  # change NA's to 'missing'
-  train [ , option.c.previous := as.character(option.c.previous)]
-  train [ , duration.previous := as.character(duration.previous)]
-  train [ , risk.factor       := as.character(risk.factor)]
-    
-  train [is.na(option.c.previous) , option.c.previous := "missing"]
-  train [is.na(duration.previous) , duration.previous := "missing"]
-  train [is.na(risk.factor)       , risk.factor       := "missing"]
-  
-  train [, option.c.previous := as.factor(option.c.previous)]
-  train [, duration.previous := as.factor(duration.previous)]
-  train [, risk.factor       := as.factor(risk.factor)]
+  # treat all NAs as a separate factor level
+  train [, `:=` (
+    risk.factor       = replace.na (risk.factor,       "missing"),
+    option.c.previous = replace.na (option.c.previous, "missing")
+  )]
     
   # reorder some of the columns
   setcolorder(train, c(1:5,26,6:25))
   
   return (train)
+}
+
+#
+# replaces NA that exist in a factor
+#
+replace.na <- function (x, new.level) {
+  if (!is.factor (x)) {
+    stop ("function intended only for factors")
+  }
+  
+  # add the new level to the factor
+  levels (x) <- c( levels(x), new.level)
+
+  # replace all NAs with the new level
+  x [is.na(x)] <- new.level
+  
+  return (x)
 }
 
 #
