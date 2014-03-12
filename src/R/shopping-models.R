@@ -73,7 +73,12 @@ extract.shopping.history <- function (data, summarize.func = sum) {
   # summarize the options which were shopped for using summarize.func
   shopping <- shopping [, lapply(.SD, summarize.func), by = customer.id ]
   setkey (shopping, "customer.id")
-  
+
+  return (shopping)
+}
+
+extract.purchase.history <- function (data, shopping) {
+
   # which options does the shopper actually purchase?
   purchase <- data [ record.type == "purchase", c("customer.id", options()), with = FALSE ]
   setkey (purchase, "customer.id")
@@ -103,7 +108,9 @@ extract.shopping.history <- function (data, summarize.func = sum) {
 champion.shopping.model <- function(verbose = FALSE) {
   
   # fetch the competition training data set and transform it for training
-  shopping.train <- extract.shopping.history (fetch (), sum)
+  input <- fetch()
+  shopping.train <- extract.shopping.history (input, sum)
+  shopping.train <- extract.purchase.history (input, shopping.train)
   
   # defines how the parameter tuning will occur
   control <- trainControl (method = "cv", number = 2)
@@ -125,6 +132,9 @@ champion.shopping.model <- function(verbose = FALSE) {
       verbose   = verbose )
   })
   
+  # name each of the models in the list
+  names(models) <- options.hat()
+  
   # transform the test data for prediction
   shopping.test <- extract.shopping.history (fetch (train = FALSE), sum)
   
@@ -132,6 +142,7 @@ champion.shopping.model <- function(verbose = FALSE) {
   for (option.hat in names (models)) {
     
     shopping.test [, option.hat := predict (models[[option.hat]], .SD), 
+                   .SDcols = 2:23, with = FALSE ]
   }
   
   # create a competition submission

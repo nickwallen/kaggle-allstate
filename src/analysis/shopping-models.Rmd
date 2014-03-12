@@ -119,8 +119,10 @@ This model uses a classification tree to predict the final purchased option base
 
 ```{r shopping.counts.model}
 
-# passing 'sum' will simply count the number of times a customer has shopped for an option
-shopping <- extract.shopping.history (competition.train, sum)
+# fetch the competition training data set and transform it for training
+input <- fetch()
+shopping.train <- extract.shopping.history (input, sum)
+shopping.train <- extract.purchase.history (input, shopping.train)
 
 # split the data into representative test/train sets
 add.plan (shopping)
@@ -218,11 +220,7 @@ with (shopping.test, confusionMatrix(option.g.hat, option.g))
 Run the models on the actual competition test data to create a submission.
 
 ```{r}
-<<<<<<< HEAD
 champion.shopping.model (verbose = TRUE)
-=======
-champion.shopping.model ()
->>>>>>> 5e5f966820ce6e400a04f50a7ce039aa8569b168
 ```
 
 
