@@ -6,11 +6,14 @@ Of course, start out by loading the source data sets.
 ```{r fetch.data,message=FALSE}
 library(randomForest)
 library(caret)
+library(data.table)
+library(e1071)
 source ("../R/fetch.R")
 source ("../R/utils.R")
 source ("../R/features.R")
+source ("../R/score.R")
 train <- fetch()
-add.plan(buy)
+add.plan(train)
 ```
 
 
@@ -27,7 +30,7 @@ ggplot(ct.prod,aes(ct))+stat_ecdf()
 
 ```
 
-Build "Naive" Model Based only on Customer Attributes & Purchase Points
+Build Model Based only on Customer Attributes & Purchase Points
 ========================================================================
 
 ```{r cust.model,message=FALSE}
@@ -35,47 +38,44 @@ buy <- train[record.type == "purchase"]
 
 
 # create a train and test set
-train.index <- createDataPartition(y= buy$plan, p=.80,list=FALSE)
-train <- buy[train.index]
-test  <- buy[-train.index]
+train.index <- createDataPartition(y= buy$plan, p=.80,list=FALSE)[,1]
+cust.train <- buy[train.index]
+cust.test  <- buy[-train.index]
 
 # defines how the parameter tuning will occur
 control <- trainControl (method = "cv", number = 2)
 
 # which model parameters will be tuned?
 tune.grid <- expand.grid (
-  ntree           = c(100, 200), 
-  mtry         = c(2,4,6,8,10)
+  #ntree           = c(100, 200), 
+  mtry         = c(2,4,6,8,10))
 
 
 models <- lapply(options(), function(option) {
   train(
     method    = "rf",
     trControl = control,
-    y         = "", #Still need to finish this
-    x         = "", #Still need to finish this
+    y         = cust.train[[option]],
+    x         = c(2,4,6,9:18,26), 
     tuneGrid  = tune.grid)
 })
-  
-# # Build String Containing Model Specification Formula: y ~ x1 + x2 + ...
-# form <- as.formula(paste0("option.a~",paste("day.of.week",
-#                                  "time.of.day.hours",
-#                                  #"state",
-#                                  #"location",
-#                                  "group.size",
-#                                  "homeowner",
-#                                  "car.age",
-#                                  "car.value",
-#                                  "risk.factor",
-#                                  "age.oldest",
-#                                  "age.youngest",
-#                                  "married.couple",
-#                                  "option.c.previous",
-#                                  "duration.previous",sep='+')))
+```
 
-fit.a <- randomForest(form, data= buy, ntree = 100,na.action=na.omit)
+Make predictions with the various models
+```{r}
 
+for (option.hat in names(models)) {
+
+    # make a prediction for each option
+    model <- models[[option.hat]]
+    cust.test[, `:=`(option.hat, predict(model, .SD)), .SDcols = c(2,4,6,9:18,26), with = FALSE]
+}
 
 ```
 
+How accurate are the predictions?
+```{r}
+# score the results
+accuracy.score(cust.test)
 
+```
