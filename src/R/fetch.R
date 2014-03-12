@@ -13,18 +13,18 @@ fetch <- function (train = TRUE) {
   
   # unzip and load the training data
   data.csv <- unzip(path, exdir = tempdir())
-  train <- fread (data.csv)
+  data <- fread (data.csv)
   
   # fix-up the column names
-  orig <- names (train)
-  setnames (train, orig, make.names (tolower (orig), allow_ = F, unique = T))
-  setnames (train, "day",        "day.of.week")
-  setnames (train, "time",       "time.of.day")
-  setnames (train, "c.previous", "option.c.previous")
-  setnames (train, c("a","b","c","d","e","f","g"), options())
+  orig <- names (data)
+  setnames (data, orig, make.names (tolower (orig), allow_ = F, unique = T))
+  setnames (data, "day",        "day.of.week")
+  setnames (data, "time",       "time.of.day")
+  setnames (data, "c.previous", "option.c.previous")
+  setnames (data, c("a","b","c","d","e","f","g"), options())
   
   # clean-up the data types
-  train [, `:=` (
+  data [, `:=` (
     customer.id       = as.character (customer.id),
     shopping.pt       = as.factor (shopping.pt),
     day.of.week       = wday (day.of.week, label = T, abbr = T),
@@ -52,15 +52,15 @@ fetch <- function (train = TRUE) {
   )]
   
   # treat all NAs as a separate factor level
-  train [, `:=` (
+  data [, `:=` (
     risk.factor       = replace.na (risk.factor,       "missing"),
     option.c.previous = replace.na (option.c.previous, "missing")
   )]
     
   # reorder some of the columns
-  setcolorder(train, c(1:5,26,6:25))
+  setcolorder(data, c(1:5,26,6:25))
   
-  return (train)
+  return (data)
 }
 
 #
