@@ -132,7 +132,6 @@ champion.shopping.model <- function(verbose = FALSE) {
   for (option.hat in names (models)) {
     
     shopping.test [, option.hat := predict (models[[option.hat]], .SD), 
-                      .SDcols = 2:23, with = FALSE ]
   }
   
   # create a competition submission

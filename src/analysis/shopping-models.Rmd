@@ -218,7 +218,11 @@ with (shopping.test, confusionMatrix(option.g.hat, option.g))
 Run the models on the actual competition test data to create a submission.
 
 ```{r}
+<<<<<<< HEAD
 champion.shopping.model (verbose = TRUE)
+=======
+champion.shopping.model ()
+>>>>>>> 5e5f966820ce6e400a04f50a7ce039aa8569b168
 ```
 
 
