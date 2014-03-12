@@ -11,6 +11,10 @@ fetch <- function (train = TRUE) {
   # determine the path to the source data
   path <- ifelse (train, "../../data/train.csv.zip", "../../data/test_v2.csv.zip")
   
+  if (!file.exists (path)) {
+    stop ( sprintf ("missing competition data [path=%s]. is the cwd correct? [cwd=%s]", path, getwd()))
+  }
+  
   # unzip and load the training data
   data.csv <- unzip(path, exdir = tempdir())
   data <- fread (data.csv)
