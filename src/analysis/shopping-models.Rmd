@@ -74,6 +74,10 @@ customers.  If a customer looks at the same option multiple times, then the opti
 # sums the number of times a customer has shopped for a particular option (A0, A1, A2, ..., B0, B1, ...)
 shopping <- extract.shopping.history (data, sum)
 
+# split the data into representative test/train sets
+add.plan (shopping)
+train.index <- createDataPartition (shopping$plan, p = 0.8, list = F)[,1]
+
 # create a train and test set
 shopping.train <- shopping [  train.index ]
 shopping.test  <- shopping [ -train.index ]
@@ -83,6 +87,7 @@ fit <- popular.model (shopping.train)
 
 # make predictions with the naive model
 shopping.test [, options.hat() := predict (fit, .SD), with = F]
+options.hat.as.factors (shopping.test)
 
 ```
 
@@ -141,7 +146,8 @@ models <- lapply (options(), function (option) {
     trControl = control,
     y         = shopping.train [[option]],
     x         = shopping.train [, 2:23, with = F],
-    tuneGrid  = tune.grid )
+    tuneGrid  = tune.grid,
+    verbose   = FALSE )
 })
 
 # name each of the models in the list
@@ -181,8 +187,9 @@ for (option.hat in names (models)) {
 
   # make a prediction for each option
   model <- models[[option.hat]]
-  shopping.test [, option.hat := predict (model, .SD), .SDcols = 2:23, with = FALSE ]
-}
+  shopping.test [, option.hat := predict (model, .SD), 
+                 .SDcols = 2:23, with = FALSE ]
+  }
 ```
 
 How accurate are the predictions?
