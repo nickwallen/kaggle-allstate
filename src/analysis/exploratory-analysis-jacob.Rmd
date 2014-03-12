@@ -5,10 +5,15 @@ Of course, start out by loading the source data sets.
 
 ```{r fetch.data,message=FALSE}
 library(randomForest)
+library(caret)
+library(data.table)
+library(e1071)
 source ("../R/fetch.R")
 source ("../R/utils.R")
+source ("../R/features.R")
+source ("../R/score.R")
 train <- fetch()
-
+add.plan(train)
 ```
 
 
@@ -16,7 +21,7 @@ Frequency of Each Plan Variation
 
 ``` {r count.plans}
 
-train[, plan := paste0(option.a,option.b,option.c,option.d,option.e,option.f,option.g)]
+#train[, plan := paste0(option.a,option.b,option.c,option.d,option.e,option.f,option.g)]
 ct.prod <- train[, list(ct = length(customer.id)),by=plan]
 ggplot(ct.prod,aes(ct))+geom_histogram()
 
@@ -25,32 +30,52 @@ ggplot(ct.prod,aes(ct))+stat_ecdf()
 
 ```
 
-Build "Naive" Model Based only on Customer Attributes & Purchase Points
+Build Model Based only on Customer Attributes & Purchase Points
 ========================================================================
 
 ```{r cust.model,message=FALSE}
 buy <- train[record.type == "purchase"]
 
-buy.in <- buy[state == "IN"]
 
-form <- as.formula(paste0("option.a~",paste("day.of.week",
-                                 "time.of.day.hours",
-                                # "state",
-                                # "location",
-                                 "group.size",
-                                 "homeowner",
-                                 "car.age",
-                                 "car.value",
-                                 "risk.factor",
-                                 "age.oldest",
-                                 "age.youngest",
-                                 "married.couple",
-                                 "option.c.previous",
-                                 "duration.previous",sep='+')))
+# create a train and test set
+train.index <- createDataPartition(y= buy$plan, p=.80,list=FALSE)[,1]
+cust.train <- buy[train.index]
+cust.test  <- buy[-train.index]
 
-fit.a <- randomForest(form, data= buy, ntree = 100,na.action=na.omit)
+# defines how the parameter tuning will occur
+control <- trainControl (method = "cv", number = 2)
+
+# which model parameters will be tuned?
+tune.grid <- expand.grid (
+  #ntree           = c(100, 200), 
+  mtry         = c(2,4,6,8,10))
 
 
- ```
+models <- lapply(options(), function(option) {
+  train(
+    method    = "rf",
+    trControl = control,
+    y         = cust.train[[option]],
+    x         = c(2,4,6,9:18,26), 
+    tuneGrid  = tune.grid)
+})
+```
 
+Make predictions with the various models
+```{r}
 
+for (option.hat in names(models)) {
+
+    # make a prediction for each option
+    model <- models[[option.hat]]
+    cust.test[, `:=`(option.hat, predict(model, .SD)), .SDcols = c(2,4,6,9:18,26), with = FALSE]
+}
+
+```
+
+How accurate are the predictions?
+```{r}
+# score the results
+accuracy.score(cust.test)
+
+```

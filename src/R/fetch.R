@@ -51,8 +51,23 @@ fetch <- function (train = TRUE) {
     homeowner         = factor (homeowner,      levels = 0:1, labels = c("no","yes")),
     record.type       = factor (record.type,    levels = 0:1, labels = c("shopping","purchase")),
     married.couple    = factor (married.couple, levels = 0:1, labels = c("no","yes"))
+
   )]
   
+  
+  # change NA's to 'missing'
+  train [ , option.c.previous := as.character(option.c.previous)]
+  train [ , duration.previous := as.character(duration.previous)]
+  train [ , risk.factor       := as.character(risk.factor)]
+    
+  train [is.na(option.c.previous) , option.c.previous := "missing"]
+  train [is.na(duration.previous) , duration.previous := "missing"]
+  train [is.na(risk.factor)       , risk.factor       := "missing"]
+  
+  train [, option.c.previous := as.factor(option.c.previous)]
+  train [, duration.previous := as.factor(duration.previous)]
+  train [, risk.factor       := as.factor(risk.factor)]
+    
   # reorder some of the columns
   setcolorder(train, c(1:5,26,6:25))
   
