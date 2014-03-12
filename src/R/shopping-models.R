@@ -96,3 +96,45 @@ extract.shopping.history <- function (data, summarize.func = sum) {
   return (shopping)
 }
 
+#
+# runs the complete the shopping model and exports the results to a file
+# which can be submitted to kaggle.
+#
+champion.shopping.model <- function(verbose = FALSE) {
+  
+  # fetch the competition test data set
+  competition.test <- fetch (train = FALSE)
+  
+  # passing 'sum' will simply count the number of times a customer has shopped for an option
+  shopping <- extract.shopping.history (competition.train, sum)
+  
+  # defines how the parameter tuning will occur
+  control <- trainControl (method = "cv", number = 2)
+  
+  # which model parameters will be tuned?
+  tune.grid <- expand.grid (
+    n.trees           = c(50, 100, 200), 
+    shrinkage         = 0.1,
+    interaction.depth = c(1, 5, 9))
+  
+  # tune/train a separate model for each option
+  models <- lapply (options(), function (option) {
+    train (
+      method    = "gbm", 
+      trControl = control,
+      y         = shopping [[option]],
+      x         = shopping [, 2:23, with = F],
+      tuneGrid  = tune.grid,
+      verbose   = verbose )
+  })
+  
+  # make a prediction for each option
+  for (option.hat in names (models)) {
+    
+    competition.test [, option.hat := predict (models[[option.hat]], .SD), 
+                      .SDcols = 2:23, with = FALSE ]
+  }
+  
+  # create a competition submission
+  create.submission (competition.test)
+}

@@ -41,3 +41,13 @@ option.e.levels <- function () c(0, 1)
 option.f.levels <- function () c(0, 1, 2, 3)
 option.g.levels <- function () c(1, 2, 3, 4)
 
+create.submission <- function (data, file = "../red-swingline-predictions.csv") {
+  
+  # extract only the customer and predicted plan
+  submission <- data [, list (customer.id, plan.hat) ]
+  
+  # write to a csv file
+  write.csv (submission, file, row.names = FALSE, col.names = c("customer_ID","plan"))
+  
+  return (normalizePath (file))
+}

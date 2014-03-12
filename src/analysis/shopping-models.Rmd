@@ -61,7 +61,7 @@ The definition for each of these fields is as follows.
 | *option.b*    | ...
 
 ```{r, include=F}
-data <- fetch()
+competition.train <- fetch()
 ```
 
 ### Popular Model
@@ -72,7 +72,7 @@ customers.  If a customer looks at the same option multiple times, then the opti
 ```{r popular.model, results='hide'}
 
 # sums the number of times a customer has shopped for a particular option (A0, A1, A2, ..., B0, B1, ...)
-shopping <- extract.shopping.history (data, sum)
+shopping <- extract.shopping.history (competition.train, sum)
 
 # split the data into representative test/train sets
 add.plan (shopping)
@@ -120,7 +120,7 @@ This model uses a classification tree to predict the final purchased option base
 ```{r shopping.counts.model}
 
 # passing 'sum' will simply count the number of times a customer has shopped for an option
-shopping <- extract.shopping.history (data, sum)
+shopping <- extract.shopping.history (competition.train, sum)
 
 # split the data into representative test/train sets
 add.plan (shopping)
@@ -189,7 +189,7 @@ for (option.hat in names (models)) {
   model <- models[[option.hat]]
   shopping.test [, option.hat := predict (model, .SD), 
                  .SDcols = 2:23, with = FALSE ]
-  }
+}
 ```
 
 How accurate are the predictions?
@@ -214,6 +214,13 @@ with (shopping.test, confusionMatrix(option.e.hat, option.e))
 with (shopping.test, confusionMatrix(option.f.hat, option.f))
 with (shopping.test, confusionMatrix(option.g.hat, option.g))
 ```
+
+Run the models on the actual competition test data to create a submission.
+
+```{r}
+champion.shopping.model ()
+```
+
 
 ### TODO
 
