@@ -1,16 +1,18 @@
 
 #
-# loads and cleans the competition data.  the function defaults to
-# loading the training data.  the test data can be loaded by supplying
-# FALSE to the 'train' argument.
+# fetches and cleans the competition data.  the function defaults to
+# loading the training data.  
+# 
+# the test data can be loaded by supplying FALSE to the 'train' argument.  
+# a sample of the data can be returned by supplying the sample size (ex. 0.10 
+# aka 10%) to the 'sample' argument
 #
-fetch <- function (train = TRUE) {
+fetch <- function (train = TRUE, sample.size = 1.0) {
   require (data.table)
   require (lubridate)
 
   # determine the path to the source data
   path <- ifelse (train, "../../data/train.csv.zip", "../../data/test_v2.csv.zip")
-  
   if (!file.exists (path)) {
     stop ( sprintf ("missing competition data [path=%s]. is the cwd correct? [cwd=%s]", path, getwd()))
   }
@@ -18,6 +20,12 @@ fetch <- function (train = TRUE) {
   # unzip and load the training data
   data.csv <- unzip(path, exdir = tempdir())
   data <- fread (data.csv)
+
+  # sample the data, if necessary
+  if (sample.size < 1.0) {
+    index <- sample (1:nrow (data), size = sample.size * nrow (data))
+    data <- data [index]  
+  }
   
   # fix-up the column names
   orig <- names (data)
