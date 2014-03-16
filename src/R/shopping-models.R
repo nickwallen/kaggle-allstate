@@ -75,7 +75,7 @@ popular.shopping.model <- function () {
   # find only the most popular choice for each option
   popular.options <- popular.options[, .SD [ N == max (N) ], by = option]
   popular.options <- t ( popular.options [, list(option, choice)]) [2, ]
-  
+
   # only the list of customers to predict for is needed from the test data
   test <- fetch (train = FALSE)
   customers <- unique (test$customer.id)
