@@ -1,14 +1,35 @@
 
 #
+# a function which returns a weighted mean where the most recent
+# values (towards the end of the list) are given higher weights
+#
+weighted.mean.most.recent <- function (x) {
+  weights <- c(1:length(x)) / length(x)
+  weighted.mean (x, weights)
+}
+
+#
+# a function which returns a weighted mean where the most recent
+# values (towards the end of the list) are given higher weights
+#
+weighted.sum.most.recent <- function (x) {
+  weights <- c(1:length(x)) / length(x)
+  sum (x * weights)
+}
+
+#
 # trains, tunes, predicts, and creates a kaggle submission file for the current
 # champion shopping model.  ultimately the shopping model will need to be 
-# ensembled with the customer model.
+# ensembled with the customer model.  the summary.func argument is used 
+# the function used to flatten/summarize multiple shopping points
 #
-champion.shopping.model <- function (verbose = FALSE) {
+champion.shopping.model <- function (summary.func = weighted.sum.most.recent, 
+                                     verbose      = FALSE, 
+                                     file         = "../../submissions/red-swingline-predictions-shopping.csv") {
   
   # fetch the competition training data set and transform it for training
   input <- fetch()
-  shopping.train <- extract.shopping.history (input, sum)
+  shopping.train <- extract.shopping.history (input, summary.func)
   shopping.train <- extract.purchase.history (input, shopping.train)
   
   # defines how the parameter tuning will occur
@@ -35,7 +56,7 @@ champion.shopping.model <- function (verbose = FALSE) {
   names(models) <- options.hat()
   
   # transform the test data for prediction
-  shopping.test <- extract.shopping.history (fetch (train = FALSE), sum)
+  shopping.test <- extract.shopping.history (fetch (train = FALSE), summary.func)
   
   # each option has its own prediction model...
   for (option.hat in names (models)) {
@@ -46,7 +67,7 @@ champion.shopping.model <- function (verbose = FALSE) {
   }
   
   # create a submission file that can be uploaded to kaggle
-  create.submission (shopping.test)
+  create.submission (shopping.test, file)
 }
 
 #
@@ -54,7 +75,7 @@ champion.shopping.model <- function (verbose = FALSE) {
 # in the training data.  popularity is determined by how many times customers 
 # have looked at a particular option in the shopping history.
 #
-popular.shopping.model <- function () {
+popular.shopping.model <- function (file = "../../submissions/red-swingline-predictions-popular.csv") {
   require (reshape2)
   require (data.table)
   
@@ -86,14 +107,14 @@ popular.shopping.model <- function () {
   setnames (predictions, paste0("V", 1:7), options.hat())  
   
   # create a submission file that can be uploaded to kaggle
-  create.submission (predictions, file = "../../submissions/red-swingline-predictions-popular.csv")
+  create.submission (predictions, file)
 }
 
 #
 # an implementation of the naive model for the competition.  this model simply chooses
 # the options that the customer last shopped for.
 #
-naive.shopping.model <- function() {
+naive.shopping.model <- function (file = "../../submissions/red-swingline-predictions-naive.csv") {
   require (reshape2)
   require (data.table)
   
@@ -111,7 +132,7 @@ naive.shopping.model <- function() {
   setnames (predictions, options(), options.hat())
   
   # create a submission file that can be uploaded to kaggle
-  create.submission (predictions, file = "../../submissions/red-swingline-predictions-naive.csv")
+  create.submission (predictions, file)
 }
 
 #
