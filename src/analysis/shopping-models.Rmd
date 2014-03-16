@@ -223,10 +223,51 @@ Run the models on the actual competition test data to create a submission.
 champion.shopping.model (verbose = TRUE)
 ```
 
+### Customers Who Purchase Unquoted Policies
 
-### TODO
+Could we determine which customers are likely to purchase policies for which they never received a quote?  These are customers who purchase options different from their last shopping point.  For all customers who are likely to purchase something without a previous quote, then predict using the data.  For all other customers, just choose the latest shopping point.  This might show a marked improvement since the naive model seems difficult to beat by simply making predictions for every customer.
+
+Could also use the 'shopping.pt' value of the latest quote which matches the purchase.  Then '0' might indicate that no quote matches the purchase.
+
+```{r}
+train <- fetch ()
+last.quote (train)
+add.plan (train)
+```
+
+What is the distribution of 'last quote'?  Most often there has never been a quote for exactly what was purchased.
+
+```{r}
+ggplot (train, aes (last.quote)) + geom_histogram()
+```
+
+Is it more likely for the customer to purchase something they were quoted for?  Most of the time customers purchase a policy for which they were previously quoted.
+
+```{r}
+ggplot (train, aes (last.quote == 0)) + geom_histogram()
+table (train$last.quote == 0)
+
+with (train, table (plan, last.quote == 0))
+ggplot (train, aes (last.quote == 0)) + geom_histo() + facet_wrap( ~ option.a, ncol = 4)
+ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.b, ncol = 4)
+ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.c, ncol = 4)
+ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.d, ncol = 4)
+ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.e, ncol = 4)
+ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.f, ncol = 4)
+ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.g, ncol = 4)
+```
+
+### Recency of Shopping Points
 
 Perhaps a difference value for each of the 'option.x.n' fields could be used.  Perhaps ones that applies a greater weight to more recent shopping history or the mean instead of the sum.
+
+There does appear to be some improvement when the recency of shopping history is taken into account.  It is is not a major improvement, but it helps.  Compare the following.
+
+```{r}
+champion.shopping.model (mean)
+champion.shopping.model (weighted.sum.most.recent)
+```
+
 
 ### TODO 
 

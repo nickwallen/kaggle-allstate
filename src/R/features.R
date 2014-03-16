@@ -52,9 +52,9 @@ add.shopping.duration <- function (data) {
 # a Plan is a chosen set of options.  There are 2,304 unique products 
 # (3*2*4*3*2*4*4).
 #
-add.plan <- function (data) {
-  data [, plan := paste0 (option.a, option.b, option.c, option.d, 
-                          option.e, option.f, option.g )]
+add.plan <- function (data, label = "plan") {
+  data [, label := paste0 (option.a, option.b, option.c, option.d, 
+                          option.e, option.f, option.g ), with = FALSE]
   
   # make explicit that the input data is modified in-place
   return (NULL)
@@ -128,3 +128,34 @@ options.as.numeric <- function (data) {
   return (NULL)
 }
 
+#
+# a feature which contains the shopping.pt value of the latest quote which matches
+# the customer's final purchase.  if the customer was never quoted for a purchase,
+# the value will be 0.
+#
+last.quote <- function (data) {
+  
+  # extract purchases only
+  purchases <- data [ record.type == "purchase", c("customer.id", options()), with = F ]
+  add.plan (purchases)
+  
+  # extract quotes only
+  quotes <- data [ record.type == "shopping", c("customer.id", "shopping.pt", options()), with = F ]
+  quotes [ , shopping.pt := as.numeric (shopping.pt)]
+  add.plan (quotes)
+  
+  setkeyv (purchases, c("customer.id", "plan"))
+  setkeyv (quotes, c("customer.id", "plan"))
+  
+  # find the last time the purchase was quoted
+  purchases [ quotes, last.quote := max (shopping.pt) ]
+  purchases [ is.na (last.quote), last.quote := 0 ]
+  
+  # merge the last quote value into the input data
+  setkey (purchases, "customer.id")
+  setkey (data, "customer.id")
+  data [purchases, last.quote := last.quote ]
+  
+  # updates made in-place
+  return (NULL)
+}
