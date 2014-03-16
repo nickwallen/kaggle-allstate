@@ -230,32 +230,73 @@ Could we determine which customers are likely to purchase policies for which the
 Could also use the 'shopping.pt' value of the latest quote which matches the purchase.  Then '0' might indicate that no quote matches the purchase.
 
 ```{r}
-train <- fetch ()
-last.quote (train)
-add.plan (train)
+data <- fetch ()
+add.last.quote (data)
+add.plan (data)
 ```
 
 What is the distribution of 'last quote'?  Most often there has never been a quote for exactly what was purchased.
 
 ```{r}
-ggplot (train, aes (last.quote)) + geom_histogram()
+ggplot (data, aes (last.quote)) + geom_histogram()
 ```
 
 Is it more likely for the customer to purchase something they were quoted for?  Most of the time customers purchase a policy for which they were previously quoted.
 
 ```{r}
-ggplot (train, aes (last.quote == 0)) + geom_histogram()
-table (train$last.quote == 0)
+ggplot (data, aes (last.quote == 0)) + geom_histogram()
+table (data$last.quote == 0)
 
-with (train, table (plan, last.quote == 0))
-ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.a)
-ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.b)
-ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.c)
-ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.d)
-ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.e)
-ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.f)
-ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.g)
+with (data, table (plan, last.quote == 0))
+ggplot (data, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.a)
+ggplot (data, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.b)
+ggplot (data, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.c)
+ggplot (data, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.d)
+ggplot (data, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.e)
+ggplot (data, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.f)
+ggplot (data, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.g)
 ```
+
+Can we predict which customers will buy unquoted policies?  'Unquoted Purchase'?
+
+```{r}
+
+# add a yes/no indicator instead of using the raw count from last.quote
+data [, unquoted.purchase := (last.quote == 0) ]
+
+# split the data into representative test/train sets
+train.index <- createDataPartition (data$unquoted.purchase, p = 0.8, list = F)[,1]
+
+# create a train and test set
+keep <- c(options(), "unquoted.purchase")
+train <- data [  train.index, keep, with = F ]
+test  <- data [ -train.index, keep, with = F ]
+
+# defines how the parameter tuning will occur
+control <- trainControl (method = "cv", number = 2)
+
+# which model parameters will be tuned?
+tune.grid <- expand.grid (
+  n.trees           = c(50, 100, 200), 
+  shrinkage         = 0.1,
+  interaction.depth = c(1, 5, 9))
+
+# tune/train a separate model for each option
+model <- train (
+  form      = as.factor (unquoted.purchase) ~ . ,
+  data      = train,
+  method    = "gbm", 
+  trControl = control,
+  tuneGrid  = tune.grid,
+  verbose   = TRUE 
+)
+
+# make a prediction 
+test [, unquoted.purchase.hat := predict (model, newdata = .SD) ]
+with (test, confusionMatrix (unquoted.purchase, unquoted.purchase.hat)) 
+
+```
+
 
 ### Recency of Shopping Points
 

@@ -133,7 +133,7 @@ options.as.numeric <- function (data) {
 # the customer's final purchase.  if the customer was never quoted for a purchase,
 # the value will be 0.
 #
-last.quote <- function (data) {
+add.last.quote <- function (data) {
   
   # extract purchases only
   purchases <- data [ record.type == "purchase", c("customer.id", options()), with = F ]
