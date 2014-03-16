@@ -248,13 +248,13 @@ ggplot (train, aes (last.quote == 0)) + geom_histogram()
 table (train$last.quote == 0)
 
 with (train, table (plan, last.quote == 0))
-ggplot (train, aes (last.quote == 0)) + geom_histo() + facet_wrap( ~ option.a, ncol = 4)
-ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.b, ncol = 4)
-ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.c, ncol = 4)
-ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.d, ncol = 4)
-ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.e, ncol = 4)
-ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.f, ncol = 4)
-ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.g, ncol = 4)
+ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.a)
+ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.b)
+ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.c)
+ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.d)
+ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.e)
+ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.f)
+ggplot (train, aes (last.quote == 0)) + geom_histogram() + facet_wrap( ~ option.g)
 ```
 
 ### Recency of Shopping Points
