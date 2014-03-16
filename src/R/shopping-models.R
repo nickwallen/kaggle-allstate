@@ -97,10 +97,21 @@ naive.shopping.model <- function() {
   require (reshape2)
   require (data.table)
   
-  # fetch the competition training data set and transform it for training
-  train <- fetch()
+  # the naive model requires no training - it simply chooses the most popular option
+  test <- fetch(train = FALSE)
+  setkey (test, "customer.id")
   
+  # find the last shopping record for each customer
+  last.shopping.pt <- test [ record.type == "shopping", 
+                             .SD [ as.numeric (shopping.pt) == max ( as.numeric (shopping.pt)) ], 
+                             by = customer.id ]
+  predictions <- last.shopping.pt [, c("customer.id", options()), with = FALSE]
   
+  # the last options becomes the prediction
+  setnames (predictions, options(), options.hat())
+  
+  # create a submission file that can be uploaded to kaggle
+  create.submission (predictions, file = "../../submissions/red-swingline-predictions-naive.csv")
 }
 
 #
