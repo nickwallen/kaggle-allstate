@@ -127,7 +127,7 @@ naive.shopping.model <- function() {
 #
 # the shopping history is available in both training and test sets.
 #
-extract.shopping.history <- function (data, summarize.func = sum) {
+extract.shopping.history <- function (data, summarize.func = sum, ...) {
   require (caret)
   
   # extract only the shopping records
@@ -138,7 +138,7 @@ extract.shopping.history <- function (data, summarize.func = sum) {
   shopping <- data.table (customer.id = shopping$customer.id, predict (dummies, shopping))
   
   # summarize the options which were shopped for using summarize.func
-  shopping <- shopping [, lapply(.SD, summarize.func), by = customer.id ]
+  shopping <- shopping [, lapply(.SD, summarize.func, ...), by = customer.id ]
   setkey (shopping, "customer.id")
 
   return (shopping)
