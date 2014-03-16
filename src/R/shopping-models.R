@@ -58,18 +58,18 @@ popular.shopping.model <- function () {
   require (reshape2)
   require (data.table)
   
-  # fetch the competition training data set and transform it for training
-  train <- fetch()
+  # the popular model requires no training - it simply chooses the most popular option
+  test <- fetch(train = FALSE)
   
   # find the total number of customers who chose each option
   popular.options <- rbindlist ( list (
-    train [, list (option = "option.a", .N), by = list (choice = option.a)],
-    train [, list (option = "option.b", .N), by = option.b],
-    train [, list (option = "option.c", .N), by = option.c],
-    train [, list (option = "option.d", .N), by = option.d],
-    train [, list (option = "option.e", .N), by = option.e],
-    train [, list (option = "option.f", .N), by = option.f],
-    train [, list (option = "option.g", .N), by = option.g]
+    test [, list (option = "option.a", .N), by = list (choice = option.a)],
+    test [, list (option = "option.b", .N), by = option.b],
+    test [, list (option = "option.c", .N), by = option.c],
+    test [, list (option = "option.d", .N), by = option.d],
+    test [, list (option = "option.e", .N), by = option.e],
+    test [, list (option = "option.f", .N), by = option.f],
+    test [, list (option = "option.g", .N), by = option.g]
   ))
   
   # find only the most popular choice for each option
@@ -77,7 +77,6 @@ popular.shopping.model <- function () {
   popular.options <- t ( popular.options [, list(option, choice)]) [2, ]
 
   # only the list of customers to predict for is needed from the test data
-  test <- fetch (train = FALSE)
   customers <- unique (test$customer.id)
   
   # predict the most popular options for every customer (TODO - this is ugly)
@@ -88,6 +87,20 @@ popular.shopping.model <- function () {
   
   # create a submission file that can be uploaded to kaggle
   create.submission (predictions, file = "../../submissions/red-swingline-predictions-popular.csv")
+}
+
+#
+# an implementation of the naive model for the competition.  this model simply chooses
+# the options that the customer last shopped for.
+#
+naive.shopping.model <- function() {
+  require (reshape2)
+  require (data.table)
+  
+  # fetch the competition training data set and transform it for training
+  train <- fetch()
+  
+  
 }
 
 #
