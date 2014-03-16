@@ -44,7 +44,7 @@ option.g.levels <- function () c(1, 2, 3, 4)
 #
 # creates a valid csv that can be submitted to kaggle
 #
-create.submission <- function (data, file = "../red-swingline-predictions.csv") {
+create.submission <- function (data, file = "../../submissions/red-swingline-predictions.csv") {
   
   # extract only the customer and predicted plan
   add.plan.hat (data)

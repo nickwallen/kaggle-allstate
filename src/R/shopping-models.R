@@ -50,59 +50,44 @@ champion.shopping.model <- function (verbose = FALSE) {
 }
 
 #
-# the popular model simply selects the most popular option in the training data.  
-# popularity simply determines how many times the customer base has looked at
-# a particular option in the shopping history.
+# the popular model simply selects the most popular option that was shopped for 
+# in the training data.  popularity is determined by how many times customers 
+# have looked at a particular option in the shopping history.
 #
-popular.model <- function (data) {
+popular.shopping.model <- function () {
+  require (reshape2)
+  require (data.table)
+  
+  # fetch the competition training data set and transform it for training
+  train <- fetch()
   
   # find the total number of customers who chose each option
-  options <- rbindlist ( list (
-    data [, list (option = "option.a", .N), by = list (choice = option.a)],
-    data [, list (option = "option.b", .N), by = option.b],
-    data [, list (option = "option.c", .N), by = option.c],
-    data [, list (option = "option.d", .N), by = option.d],
-    data [, list (option = "option.e", .N), by = option.e],
-    data [, list (option = "option.f", .N), by = option.f],
-    data [, list (option = "option.g", .N), by = option.g]
+  popular.options <- rbindlist ( list (
+    train [, list (option = "option.a", .N), by = list (choice = option.a)],
+    train [, list (option = "option.b", .N), by = option.b],
+    train [, list (option = "option.c", .N), by = option.c],
+    train [, list (option = "option.d", .N), by = option.d],
+    train [, list (option = "option.e", .N), by = option.e],
+    train [, list (option = "option.f", .N), by = option.f],
+    train [, list (option = "option.g", .N), by = option.g]
   ))
   
   # find only the most popular choice for each option
-  popular.options <- options[, .SD [ N == max (N) ], by = option]
+  popular.options <- popular.options[, .SD [ N == max (N) ], by = option]
+  popular.options <- t ( popular.options [, list(option, choice)]) [2, ]
   
-  # return a representation of this model that can be passed to 'predict'
-  model <- list (popular.options = popular.options)
-  class (model) <- "popular.model"
+  # only the list of customers to predict for is needed from the test data
+  test <- fetch (train = FALSE)
+  customers <- unique (test$customer.id)
   
-  return (model)
-}
-
-#
-# TODO - caret has some way to build your own models using caret's infrastructure.  explore
-# that some more.  building a separate predict implementation was just an experiement
-# so that it could be treated just like any other candidate model.
-#
-# creates predictions from the "popular model" built using the 'popular.model' function.
-# this is an implementation of the generic function stats::predict.
-#
-predict.popular.model <- function (model, newdata) {
-
-  # need a prediction for each customer
-  customers <- newdata$customer.id
-  
-  # extract the most popular options
-  option.mx <- t (model$popular.options [, list (option, choice)])
-  options <- option.mx ["option", ]
-  choices <- option.mx ["choice", ]
-
-  # how many predictions do we need to make?
+  # predict the most popular options for every customer (TODO - this is ugly)
   rows <- length (customers)
+  options.matrix <- matrix (rep (popular.options, rows), nrow = rows, byrow = TRUE)
+  predictions <- data.table (customer.id = customers, options.matrix)
+  setnames (predictions, paste0("V", 1:7), options.hat())  
   
-  # how many variables are there to predict?
-  cols <- length (choices)
-  
-  # is there a more efficient way to do this?
-  predictions <- data.frame (matrix (rep (choices, rows), ncol = cols, byrow = T))
+  # create a submission file that can be uploaded to kaggle
+  create.submission (predictions, file = "../../submissions/red-swingline-predictions-popular.csv")
 }
 
 #
@@ -119,6 +104,7 @@ predict.popular.model <- function (model, newdata) {
 # the shopping history is available in both training and test sets.
 #
 extract.shopping.history <- function (data, summarize.func = sum) {
+  require (caret)
   
   # extract only the shopping records
   shopping <- data [record.type == "shopping"]
