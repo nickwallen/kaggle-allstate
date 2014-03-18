@@ -38,7 +38,7 @@ fetch <- function (train = TRUE, sample.size = 1.0) {
   # clean-up the data types
   data [, `:=` (
     customer.id       = as.character (customer.id),
-    shopping.pt       = as.factor (shopping.pt),
+    shopping.pt       = as.numeric (shopping.pt),
     day.of.week       = wday (day.of.week, label = T, abbr = T),
     time.of.day.hours = as.hours (time.of.day),
     
