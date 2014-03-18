@@ -111,31 +111,6 @@ popular.shopping.model <- function (file = "../../submissions/red-swingline-pred
 }
 
 #
-# an implementation of the naive model for the competition.  this model simply chooses
-# the options that the customer last shopped for.
-#
-naive.shopping.model <- function (file = "../../submissions/red-swingline-predictions-naive.csv") {
-  require (reshape2)
-  require (data.table)
-  
-  # the naive model requires no training - it simply chooses the most popular option
-  test <- fetch(train = FALSE)
-  setkey (test, "customer.id")
-  
-  # find the last shopping record for each customer
-  last.shopping.pt <- test [ record.type == "shopping", 
-                             .SD [ as.numeric (shopping.pt) == max ( as.numeric (shopping.pt)) ], 
-                             by = customer.id ]
-  predictions <- last.shopping.pt [, c("customer.id", options()), with = FALSE]
-  
-  # the last options becomes the prediction
-  setnames (predictions, options(), options.hat())
-  
-  # create a submission file that can be uploaded to kaggle
-  create.submission (predictions, file)
-}
-
-#
 # a customer has one or more "shopping points" which characterize the options a 
 # customer shopped for in the past.  this function extracts and flattens a 
 # customer's shopping history into a single record that can then be used for 

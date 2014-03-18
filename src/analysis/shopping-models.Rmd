@@ -21,7 +21,6 @@ opts_chunk$set(fig.width=12, fig.height=8, tidy=T)
 
 Modeling of Customer Shopping History
 ========================================================
-
 The customer demographic data and the customer shopping history are completely different types of data.  We are going to model each of these independently.  The final prediction will be an ensemble between the two.  The initial challenge for the shopping history data is in flattening a customer's shopping history into one single record that can be used to train and predict the customer's final purchase plan.  
 
 ### Preprocessing
@@ -82,10 +81,10 @@ train.index <- createDataPartition (shopping$plan, p = 0.8, list = F)[,1]
 shopping.train <- shopping [  train.index ]
 shopping.test  <- shopping [ -train.index ]
 
-# train the naive model
+# train the popular model
 fit <- popular.model (shopping.train)
 
-# make predictions with the naive model
+# make predictions with the popular model
 shopping.test [, options.hat() := predict (fit, .SD), with = F]
 options.hat.as.factors (shopping.test)
 
@@ -297,6 +296,7 @@ with (test, confusionMatrix (unquoted.purchase, unquoted.purchase.hat))
 
 ```
 
+### TODO - To use this we could just ensemble the naive model and the shopping history model.  Let the ensemble choose which is most appropriate.
 
 ### Recency of Shopping Points
 
