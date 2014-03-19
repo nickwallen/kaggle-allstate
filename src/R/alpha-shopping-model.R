@@ -15,15 +15,13 @@ export.alpha.model <- function (summary.func = weighted.sum.most.recent,
   shopping.train <- extract.purchase.history (data, shopping.train)
   
   # train the alpha model
-  models <- train.alpha.model(shopping.train)
+  models <- cache ("alpha-models", train.alpha.model(shopping.train))
   
   # transform the test data for prediction
   shopping.test <- extract.shopping.history (fetch (train = FALSE), summary.func)
   
-  # each option has its own prediction model...
+  # make a prediction for each option [a-g] using the correct model
   for (option.hat in names (models)) {
-    
-    # make a prediction for each option [a-g] using the correct model 
     shopping.test [, option.hat := predict (models [[ option.hat ]], .SD), .SDcols = 2:23, with = FALSE ]
   }
   
