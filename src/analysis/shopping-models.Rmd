@@ -11,6 +11,9 @@ library (gridExtra)
 source ("../R/fetch.R")
 source ("../R/features.R")
 source ("../R/shopping-models.R")
+source ("../R/alpha-shopping-model.R")
+source ("../R/naive-shopping-model.R")
+source ("../R/popular-shopping-model.R")
 source ("../R/score.R")
 source ("../R/utils.R")
 source ("../R/cache.R")
@@ -296,7 +299,27 @@ with (test, confusionMatrix (unquoted.purchase, unquoted.purchase.hat))
 
 ```
 
-### TODO - To use this we could just ensemble the naive model and the shopping history model.  Let the ensemble choose which is most appropriate.
+### TODO - Ensembles 
+
+The naive model is relatively effective for the competition. Even the best competitors are beating it by only a few points. This indicates that in most cases customers purchase plans for which they have previously (and most recently) received a quote. For these customers, the naive model might be the best model.
+
+Alternatively, there are other customers who will choose to purchase an unquoted plan. For these customers an alternative shopping or customer-based model should be used to improve accuracy.  This could be accomplished by ensembling the naive model with another model and have the ensemble model decide when each model should be applied.
+
+Steps
+  - create predictions with alpha model
+  - create prediction with naive model
+  - merge the data so that there is one row for each customer that includes all of the customer's attributes, the options predicted by each model, and the actual option values
+  - predict each of the following:
+
+```
+  option.a ~ age + car.age + risk + ... + alpha.option.a.hat + naive.option.a.hat
+  option.b ~ age + car.age + risk + ... + alpha.option.b.hat + naive.option.b.hat
+```
+
+```{r}
+
+```
+
 
 ### Recency of Shopping Points
 
