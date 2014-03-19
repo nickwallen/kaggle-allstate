@@ -318,8 +318,14 @@ Steps
 
 ```{r}
 
-```
+# make predictions with the naive model
+naive.models <- train.naive.model (data)
+naive.predictions <- predict.naive.model (naive.models)
 
+# make predictions with the alpha model
+# TODO - need a function to get just the predictoins for the alpha model
+
+```
 
 ### Recency of Shopping Points
 
