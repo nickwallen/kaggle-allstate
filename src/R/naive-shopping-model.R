@@ -68,16 +68,10 @@ train.naive.model <- function (data) {
 }
 
 #
-# trains, predicts and creates a competition submission file for the naive model 
-# used as a benchmark for the competition.  this model simply chooses
-# the options that the customer last shopped for.
+# makes predictions for each option [a-g] using the naive model
 #
-export.naive.model <- function (data = fetch (train = FALSE), 
-                                file = "../../submissions/red-swingline-predictions-naive.csv") {
-  
-  # create a naive model for each option
-  models <- train.naive.model (data)
-  
+predict.naive.model <- function (models) {
+
   # each option [a-g] has its own prediction model; caret does not support multi-output models
   predictions <- lapply (options.hat(), function (option.hat) {
     predict (models [[option.hat]], data )
@@ -87,6 +81,19 @@ export.naive.model <- function (data = fetch (train = FALSE),
   # label the predictions with the customer id
   predictions$customer.id <- unique (data$customer.id)
   
-  # create a submission file that can be uploaded to kaggle
-  create.submission (as.data.table (predictions), file)
+  return (as.data.table (predictions))
+}
+
+#
+# trains, predicts and creates a competition submission file for the naive model 
+# used as a benchmark for the competition.  this model simply chooses
+# the options that the customer last shopped for.
+#
+export.naive.model <- function (data = fetch (train = FALSE), 
+                                file = "../../submissions/red-swingline-predictions-naive.csv") {
+  
+  # train, predict, and export results
+  models <- train.naive.model (data)
+  predictions <- predict.naive.model (models)
+  create.submission (predictions, file)
 }
