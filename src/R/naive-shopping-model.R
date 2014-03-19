@@ -49,14 +49,11 @@ naive.shopping.model <- list (
 )
 
 #
-# trains, predicts and creates a competition submission file for the naive model 
-# used as a benchmark for the competition.  this model simply chooses
-# the options that the customer last shopped for.
+# trains the naive model given a set of training data
 #
-export.naive.model <- function (data = fetch (train = FALSE), 
-                                file = "../../submissions/red-swingline-predictions-naive.csv") {
+train.naive.model <- function (data) {
+  require ("caret")
   
-  # create a naive model for each option
   models <- lapply (options(), function (option) {
     train (
       method    = naive.shopping.model, 
@@ -66,6 +63,20 @@ export.naive.model <- function (data = fetch (train = FALSE),
       tuneGrid  = data.frame (option = option))
   })
   names(models) <- options.hat()
+  
+  return (models)
+}
+
+#
+# trains, predicts and creates a competition submission file for the naive model 
+# used as a benchmark for the competition.  this model simply chooses
+# the options that the customer last shopped for.
+#
+export.naive.model <- function (data = fetch (train = FALSE), 
+                                file = "../../submissions/red-swingline-predictions-naive.csv") {
+  
+  # create a naive model for each option
+  models <- train.naive.model (data)
   
   # each option [a-g] has its own prediction model; caret does not support multi-output models
   predictions <- lapply (options.hat(), function (option.hat) {

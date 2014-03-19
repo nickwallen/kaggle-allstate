@@ -51,24 +51,35 @@ popular.shopping.model <- list (
 )
 
 #
-# trains, predicts and creates a competition submission file for the popular model 
-# used as a benchmark for the competition.  this model simply chooses
-# the options that the customer last shopped for.
+# trains the popular model given a set of training data
 #
-export.popular.model <- function (data = fetch (train = FALSE), 
-                                  file = "../../submissions/red-swingline-predictions-popular.csv") {
+train.popular.model <- function (data) {
   require ("caret")
   
   # create a naive model for each option
   models <- lapply (options(), function (option) {
     train (
       method    = popular.shopping.model, 
-      trControl = trainControl (method = "none"),
+      trControl = trainControl (method = "cv", number = 2),
       y         = data [[ option ]],
       x         = data,
       tuneGrid  = data.frame (option = option))
   })
   names(models) <- options.hat()
+  
+  return (models)
+}
+
+#
+# trains, predicts and creates a competition submission file for the popular model 
+# used as a benchmark for the competition.  this model simply chooses
+# the options that the customer last shopped for.
+#
+export.popular.model <- function (data = fetch (train = FALSE), 
+                                  file = "../../submissions/red-swingline-predictions-popular.csv") {
+  
+  # train a model for each option
+  models <- train.popular.model (data)
   
   # each option [a-g] has its own prediction model; caret does not support multi-output models
   predictions <- lapply (options.hat(), function (option.hat) {
