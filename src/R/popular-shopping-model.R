@@ -41,7 +41,6 @@ popular.shopping.model <- list (
     # the model tells us which option to predict
     option       <- modelFit$option
     most.popular <- names (modelFit$most.popular)
-    print (sprintf ("predict: %s = %s", option, most.popular))
     
     # a prediction is needed for each customer
     pred.count <- length (unique (newdata$customer.id))
