@@ -62,10 +62,6 @@ The definition for each of these fields is as follows.
 | *option.a*    | The outcome for option a that is being predicted.  The value for this field comes from the purchase record.
 | *option.b*    | ...
 
-```{r, include=F}
-competition.train <- fetch()
-```
-
 ### Popular Model
 
 Let's first look at a popular model.  The popular model simply chooses the option that has been shopped for by most
@@ -73,23 +69,24 @@ customers.  If a customer looks at the same option multiple times, then the opti
 
 ```{r popular.model, results='hide'}
 
-# sums the number of times a customer has shopped for a particular option (A0, A1, A2, ..., B0, B1, ...)
-shopping <- extract.shopping.history (competition.train, sum)
-
 # split the data into representative test/train sets
-add.plan (shopping)
-train.index <- createDataPartition (shopping$plan, p = 0.8, list = F)[,1]
+data <- fetch()
+add.plan (data)
+train.index <- createDataPartition (data$plan, p = 0.8, list = F)[,1]
 
 # create a train and test set
-shopping.train <- shopping [  train.index ]
-shopping.test  <- shopping [ -train.index ]
+train <- data [  train.index ]
+test  <- data [ -train.index ]
 
-# train the popular model
-fit <- popular.model (shopping.train)
+# preprocess the train and test sets
+train <- train [record.type == "purchase"]
+test  <- test  [record.type == "purchase"]
+
+# train on the purchase records only
+models <- train.popular.model (train )
 
 # make predictions with the popular model
-shopping.test [, options.hat() := predict (fit, .SD), with = F]
-options.hat.as.factors (shopping.test)
+test [, options.hat() := predict.popular.model (models, .SD), with = F]
 
 ```
 
@@ -98,21 +95,21 @@ How did the popular model perform?
 ```{r popular.model.score}
 
 # score the results
-accuracy.score (shopping.test)
-partial.accuracy.score (shopping.test)
-
+accuracy.score (test)
+partial.accuracy.score (test)
 ```
 
 Take a closer look using a confusion matrix for each option.
 
 ```{r popular.model.confusion.matrix}
-with (shopping.test, confusionMatrix(option.a.hat, option.a))
-with (shopping.test, confusionMatrix(option.b.hat, option.b))
-with (shopping.test, confusionMatrix(option.c.hat, option.c))
-with (shopping.test, confusionMatrix(option.d.hat, option.d))
-with (shopping.test, confusionMatrix(option.e.hat, option.e))
-with (shopping.test, confusionMatrix(option.f.hat, option.f))
-with (shopping.test, confusionMatrix(option.g.hat, option.g))
+
+with (test, confusionMatrix(option.a.hat, option.a))
+with (test, confusionMatrix(option.b.hat, option.b))
+with (test, confusionMatrix(option.c.hat, option.c))
+with (test, confusionMatrix(option.d.hat, option.d))
+with (test, confusionMatrix(option.e.hat, option.e))
+with (test, confusionMatrix(option.f.hat, option.f))
+with (test, confusionMatrix(option.g.hat, option.g))
 ```
 
 ### Shopping Counts
