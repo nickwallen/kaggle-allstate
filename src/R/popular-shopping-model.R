@@ -46,7 +46,7 @@ popular.shopping.model <- list (
     pred.count <- length (unique (newdata$customer.id))
     
     # predict the most popular option for each customer
-    predictions <- rep (most.popular, pred.count)
+    outcomes <- rep (most.popular, pred.count)
   }
 )
 
@@ -73,31 +73,38 @@ train.popular.model <- function (data) {
 #
 # makes predictions for all of the options using the popular model.
 #
-predict.popular.model <- function (models) {
+predict.popular.model <- function (models, predictors) {
   require ("caret")
   
   # each option [a-g] has its own prediction model; caret does not support multi-output models
-  predictions <- lapply (options.hat(), function (option.hat) {
-    predict (models [[option.hat]], data )
+  outcomes <- lapply (options.hat(), function (option.hat) {
+    predict (models [[option.hat]], predictors )
   })
-  names(predictions) <- options.hat()
+  names(outcomes) <- options.hat()
   
-  # label the predictions with the customer id
-  predictions$customer.id <- unique (data$customer.id)
+  # label the outcomes with the customer id
+  #outcomes$customer.id <- unique (predictors$customer.id)
   
-  return ( as.data.table (predictions))
+  return ( as.data.table (outcomes))
 }
 
 #
 # trains, predicts and creates a competition submission file for the popular model 
-# used as a benchmark for the competition.  this model simply chooses
-# the options that the customer last shopped for.
+# used as a benchmark for the competition.  this function uses only the competition data
+# set.  
 #
-export.popular.model <- function (data = fetch (train = FALSE), 
-                                  file = "../../submissions/red-swingline-predictions-popular.csv") {
+export.popular.model <- function (file = "../../submissions/red-swingline-predictions-popular.csv") {
   
-  # train, predict, and export results
+  # when preparing the model for submission, only the competition test set is needed
+  data <- fetch (train = FALSE)
+  
+  # train
   models <- train.popular.model (data)
-  predictions <- predict.popular.model (models)
-  create.submission (predictions, file)
+  
+  # predict
+  predictors <- data [, non.options (data), with = FALSE]
+  outcomes <- predict.popular.model (models, predictors)
+  
+  # submit
+  create.submission (outcomes, file)
 }

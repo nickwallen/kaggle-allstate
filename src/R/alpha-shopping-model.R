@@ -32,7 +32,7 @@ export.alpha.model <- function (summary.func = weighted.sum.most.recent,
 #
 # trains a separate model for each option.
 #
-train.alpha.model <- function (shopping.train) {
+train.alpha.model <- function (shopping.train, verbose = TRUE) {
   
   # which model parameters will be tuned?
   tune.grid <- expand.grid (

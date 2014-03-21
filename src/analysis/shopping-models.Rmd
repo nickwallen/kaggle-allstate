@@ -112,24 +112,24 @@ with (test, confusionMatrix(option.f.hat, option.f))
 with (test, confusionMatrix(option.g.hat, option.g))
 ```
 
-### Shopping Counts
+### Alpha Model - Shopping History
 
 This model uses a classification tree to predict the final purchased option based on the number of times that customer has shopped for a particular valid option.  In addition, each option (a-g) is modeled separately.
 
 ```{r shopping.counts.model}
 
 # fetch the competition training data set and transform it for training
-input <- fetch()
-shopping.train <- extract.shopping.history (input, sum)
-shopping.train <- extract.purchase.history (input, shopping.train)
+data <- fetch()
+data.shopping <- extract.shopping.history (data, sum)
+data.shopping <- extract.purchase.history (data, data.shopping)
 
 # split the data into representative test/train sets
-add.plan (shopping)
-train.index <- createDataPartition (shopping$plan, p = 0.8, list = F)[,1]
+add.plan (data.shopping)
+train.index <- createDataPartition (data.shopping$plan, p = 0.8, list = F)[,1]
 
 # create a train and test set
-shopping.train <- shopping [  train.index ]
-shopping.test  <- shopping [ -train.index ]
+train <- data.shopping [  train.index ]
+test  <- data.shopping [ -train.index ]
 
 # defines how the parameter tuning will occur
 control <- trainControl (method = "cv", number = 2)
@@ -145,8 +145,8 @@ models <- lapply (options(), function (option) {
   train (
     method    = "gbm", 
     trControl = control,
-    y         = shopping.train [[option]],
-    x         = shopping.train [, 2:23, with = F],
+    y         = train [[option]],
+    x         = train [, 2:23, with = F],
     tuneGrid  = tune.grid,
     verbose   = FALSE )
 })
@@ -188,7 +188,7 @@ for (option.hat in names (models)) {
 
   # make a prediction for each option
   model <- models[[option.hat]]
-  shopping.test [, option.hat := predict (model, .SD), 
+  test [, option.hat := predict (model, .SD), 
                  .SDcols = 2:23, with = FALSE ]
 }
 ```
@@ -198,8 +198,8 @@ How accurate are the predictions?
 ```{r shopping.counts.accuracy}
 
 # score the results
-accuracy.score (shopping.test)
-partial.accuracy.score (shopping.test)
+accuracy.score (test)
+partial.accuracy.score (test)
 
 ```
 
@@ -207,13 +207,13 @@ Take a closer look using a confusion matrix for each option.
 
 ```{r shopping.counts.confusion.matrix}
 
-with (shopping.test, confusionMatrix(option.a.hat, option.a))
-with (shopping.test, confusionMatrix(option.b.hat, option.b))
-with (shopping.test, confusionMatrix(option.c.hat, option.c))
-with (shopping.test, confusionMatrix(option.d.hat, option.d))
-with (shopping.test, confusionMatrix(option.e.hat, option.e))
-with (shopping.test, confusionMatrix(option.f.hat, option.f))
-with (shopping.test, confusionMatrix(option.g.hat, option.g))
+with (test, confusionMatrix(option.a.hat, option.a))
+with (test, confusionMatrix(option.b.hat, option.b))
+with (test, confusionMatrix(option.c.hat, option.c))
+with (test, confusionMatrix(option.d.hat, option.d))
+with (test, confusionMatrix(option.e.hat, option.e))
+with (test, confusionMatrix(option.f.hat, option.f))
+with (test, confusionMatrix(option.g.hat, option.g))
 ```
 
 Run the models on the actual competition test data to create a submission.
