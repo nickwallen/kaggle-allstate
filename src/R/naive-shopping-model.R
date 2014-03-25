@@ -70,16 +70,16 @@ train.naive.model <- function (data) {
 #
 # makes predictions for each option [a-g] using the naive model
 #
-predict.naive.model <- function (models) {
+predict.naive.model <- function (models, predictors) {
 
   # each option [a-g] has its own prediction model; caret does not support multi-output models
   predictions <- lapply (options.hat(), function (option.hat) {
-    predict (models [[option.hat]], data )
+    predict (models [[option.hat]], predictors )
   })
   names(predictions) <- options.hat()
   
   # label the predictions with the customer id
-  predictions$customer.id <- unique (data$customer.id)
+  predictions$customer.id <- unique (predictors$customer.id)
   
   return (as.data.table (predictions))
 }
