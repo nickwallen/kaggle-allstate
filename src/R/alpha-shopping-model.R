@@ -21,9 +21,7 @@ export.alpha.model <- function (summary.func = weighted.sum.most.recent,
   shopping.test <- extract.shopping.history (fetch (train = FALSE), summary.func)
   
   # make a prediction for each option [a-g] using the correct model
-  for (option.hat in names (models)) {
-    shopping.test [, option.hat := predict (models [[ option.hat ]], .SD), .SDcols = 2:23, with = FALSE ]
-  }
+  predict.alpha.model (models, shopping.test)
   
   # create a submission file that can be uploaded to kaggle
   create.submission (shopping.test, file)
@@ -56,6 +54,21 @@ train.alpha.model <- function (shopping.train, verbose = TRUE) {
   
   return (models)
 }
+
+#
+# creates predictions from the alpha model
+#
+predict.alpha.model <- function (models, predictors) {
+  
+  # make a prediction for each option [a-g] using the correct model
+  for (option.hat in names (models)) {
+    predictors [, option.hat := predict (models [[ option.hat ]], .SD), .SDcols = 2:23, with = FALSE ]
+  }
+  
+  # the predictions are added in-place to the predictors data set
+  return (NULL)
+}
+
 
 #
 # a function which returns a weighted mean where the most recent
