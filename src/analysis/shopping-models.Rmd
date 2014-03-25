@@ -270,21 +270,20 @@ with (test, confusionMatrix (unquoted.purchase, unquoted.purchase.hat))
 
 ```
 
-### TODO - Ensembles 
+### Ensembles
 
 The naive model is relatively effective for the competition. Even the best competitors are beating it by only a few points. This indicates that in most cases customers purchase plans for which they have previously (and most recently) received a quote. For these customers, the naive model might be the best model.
 
 Alternatively, there are other customers who will choose to purchase an unquoted plan. For these customers an alternative shopping or customer-based model should be used to improve accuracy.  This could be accomplished by ensembling the naive model with another model and have the ensemble model decide when each model should be applied.
 
-Steps
-  - create predictions with alpha model
-  - create prediction with naive model
-  - merge the data so that there is one row for each customer that includes all of the customer's attributes, the options predicted by each model, and the actual option values
-  - predict each of the following:
+Lastly, there is a group of customers for which we have no shopping history.  For these customers we could use a purely customer based model.
 
 ```
-  option.a ~ age + car.age + risk + ... + alpha.option.a.hat + naive.option.a.hat
-  option.b ~ age + car.age + risk + ... + alpha.option.b.hat + naive.option.b.hat
+  option.a ~ <customer attributes> 
+    + alpha.model.option.a.hat
+    + naive.model.option.a.hat
+    + customer.model.option.a.hat
+    + <length of shopping history> 
 ```
 
 ```{r}
@@ -298,18 +297,38 @@ train.index <- createDataPartition (data$plan, p = 0.8, list = F)[,1]
 train <- data [  train.index ] 
 test  <- data [ -train.index ]
 
+#
+# naive model
+#
+
+# make predictions with the naive model
+# the model does not require training, hence it only uses the test data
+naive.models <- train.naive.model (test)
+naive.predictions <- predict.naive.model (naive.models, test)
+
+#
+# alpha model
+#
+
 # prepare the training data
 train.shopping <- extract.shopping.history (train)
 train.shopping <- extract.purchase.history (train, train.shopping)
 
-# make predictions with the naive model
-naive.models <- train.naive.model (train)
-naive.predictions <- predict.naive.model (naive.models, train)
+# train the models
+models <- cache ("train.alpha.models", 
+                  train.alpha.model (train.shopping, verbose = TRUE))
 
-# make a prediction for each option [a-g] using the correct model
-for (option.hat in names (models)) {
-  train.shopping [, option.hat := predict (models [[ option.hat ]], .SD), .SDcols = 2:23, with = FALSE ]
-}
+# TODO - 19393 of the option values trying to predict are NA, which causes this to blow up... this is because some of the customers have no shopping history.  this situation needs to be handled in train.alpha.model
+
+# prepare the test data
+test.shopping <- extract.shopping.history (test)
+test.shopping <- extract.purchase.history (test, test.shopping)
+
+# predict the future
+predict.alpha.model (models, test.shopping)
+
+# TODO - combine the predictions from both models and train a subsequent model that looks like...
+# option.a ~ age + car.age + risk + ... + alpha.option.a.hat + naive.option.a.hat
 
 ```
 
@@ -320,8 +339,7 @@ Perhaps a difference value for each of the 'option.x.n' fields could be used.  P
 There does appear to be some improvement when the recency of shopping history is taken into account.  It is is not a major improvement, but it helps.  Compare the following.
 
 ```{r}
-champion.shopping.model (mean)
-champion.shopping.model (weighted.sum.most.recent)
+export.alpha.model (verbose = T, summary.func = weighted.sum.most.recent)
 ```
 
 
