@@ -62,13 +62,12 @@ predict.alpha.model <- function (models, predictors) {
   
   # make a prediction for each option [a-g] using the correct model
   for (option.hat in names (models)) {
-    predictors [, option.hat := predict (models [[ option.hat ]], .SD), .SDcols = 2:23, with = FALSE ]
+    predictors [, option.hat := predict (models [[option.hat]], .SD), .SDcols = 2:23, with = FALSE ]
   }
   
   # the predictions are added in-place to the predictors data set
   return (NULL)
 }
-
 
 #
 # a function which returns a weighted mean where the most recent
@@ -106,7 +105,7 @@ extract.shopping.history <- function (data, summarize.func = sum, ...) {
   
   # extract only the shopping records
   shopping <- data [record.type == "shopping"]
-  
+
   # transform the options into dummy variables; option.a becomes (option.a0, option.a1, option.a2)
   dummies <- dummyVars (~ option.a + option.b + option.c + option.d + option.e + option.f + option.g, shopping)
   shopping <- data.table (customer.id = shopping$customer.id, predict (dummies, shopping))
