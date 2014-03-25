@@ -131,28 +131,8 @@ train.index <- createDataPartition (data.shopping$plan, p = 0.8, list = F)[,1]
 train <- data.shopping [  train.index ]
 test  <- data.shopping [ -train.index ]
 
-# defines how the parameter tuning will occur
-control <- trainControl (method = "cv", number = 2)
 
-# which model parameters will be tuned?
-tune.grid <- expand.grid (
-  n.trees           = c(50, 100, 200), 
-  shrinkage         = 0.1,
-  interaction.depth = c(1, 5, 9))
-
-# tune/train a separate model for each option
-models <- lapply (options(), function (option) {
-  train (
-    method    = "gbm", 
-    trControl = control,
-    y         = train [[option]],
-    x         = train [, 2:23, with = F],
-    tuneGrid  = tune.grid,
-    verbose   = FALSE )
-})
-
-# name each of the models in the list
-names(models) <- options.hat()
+models <- train.alpha.model (train)
 
 ```
 
