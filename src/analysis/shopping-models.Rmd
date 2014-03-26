@@ -13,6 +13,7 @@ source ("../R/features.R")
 source ("../R/alpha-shopping-model.R")
 source ("../R/naive-shopping-model.R")
 source ("../R/popular-shopping-model.R")
+source ("../R/unquoted-shopping-model.R")
 source ("../R/score.R")
 source ("../R/utils.R")
 source ("../R/cache.R")
@@ -111,7 +112,7 @@ with (test, confusionMatrix(option.f.hat, option.f))
 with (test, confusionMatrix(option.g.hat, option.g))
 ```
 
-### Alpha Model - Shopping History
+### Alpha Model - Shopping History Only
 
 This model uses a classification tree to predict the final purchased option based on the number of times that customer has shopped for a particular valid option.  In addition, each option (a-g) is modeled separately.
 
@@ -160,14 +161,7 @@ do.call(grid.arrange,  plots)
 Make predictions with the various models.
 
 ```{r shopping.counts.predictions, results='hide'}
-
-for (option.hat in names (models)) {
-
-  # make a prediction for each option
-  model <- models[[option.hat]]
-  test [, option.hat := predict (model, .SD), 
-                 .SDcols = 2:23, with = FALSE ]
-}
+predict.alpha.model (models, test)
 ```
 
 How accurate are the predictions?
@@ -199,9 +193,11 @@ Run the models on the actual competition test data to create a submission.
 export.alpha.model (verbose = TRUE)
 ```
 
-### Customers Who Purchase Unquoted Policies
+### Unquoted Purchase Model
 
-Could we determine which customers are likely to purchase policies for which they never received a quote?  These are customers who purchase options different from their last shopping point.  For all customers who are likely to purchase something without a previous quote, then predict using the data.  For all other customers, just choose the latest shopping point.  This might show a marked improvement since the naive model seems difficult to beat by simply making predictions for every customer.
+Which customers are likely to purchase policies for which they never received a quote?  These are customers who, by definition, purchase options different from their last shopping point.  Can we model this and predict which customers are likely to make an unquoted purchase?
+
+For all customers who are likely to purchase something without a previous quote, then predict using the data.  For all other customers, just choose the latest shopping point.  This might show a marked improvement since the naive model seems difficult to beat by simply making predictions for every customer.
 
 Could also use the 'shopping.pt' value of the latest quote which matches the purchase.  Then '0' might indicate that no quote matches the purchase.
 
@@ -244,9 +240,8 @@ data [, unquoted.purchase := (last.quote == 0) ]
 train.index <- createDataPartition (data$unquoted.purchase, p = 0.8, list = F)[,1]
 
 # create a train and test set
-keep <- c(options(), "unquoted.purchase")
-train <- data [  train.index, keep, with = F ]
-test  <- data [ -train.index, keep, with = F ]
+train <- data [  train.index ]
+test  <- data [ -train.index ]
 
 # which model parameters will be tuned?
 tune.grid <- expand.grid (
@@ -254,9 +249,16 @@ tune.grid <- expand.grid (
   shrinkage         = 0.1,
   interaction.depth = c(1, 5, 9))
 
-# tune/train a separate model for each option
+```
+
+Predict unquoted purchases with the options values only.
+
+```{r}
+
+# tune/train a separate model using options only
 model <- train (
-  form      = as.factor (unquoted.purchase) ~ . ,
+  form      = as.factor(unquoted.purchase) ~ option.a + option.b + option.c + option.d + 
+                                             option.e + option.f + option.g,
   data      = train,
   method    = "gbm", 
   trControl = trainControl (method = "cv", number = 2),
@@ -268,17 +270,171 @@ model <- train (
 test [, unquoted.purchase.hat := predict (model, newdata = .SD) ]
 with (test, confusionMatrix (unquoted.purchase, unquoted.purchase.hat)) 
 
+# TODO - oversample where unquoted purchase is FALSE?
+
 ```
 
-### Ensembles
+Predict unquoted purchases with options and additional customer attributes.
 
-The naive model is relatively effective for the competition. Even the best competitors are beating it by only a few points. This indicates that in most cases customers purchase plans for which they have previously (and most recently) received a quote. For these customers, the naive model might be the best model.
+```{r}
+
+# tune/train a separate model using options only
+model <- train (
+  form      = as.factor(unquoted.purchase) ~ 
+    time.of.day.hours + cost + car.age + age.oldest + age.youngest + 
+    duration.previous + option.g,
+  data      = train,
+  method    = "gbm", 
+  trControl = trainControl (method = "cv", number = 2),
+  tuneGrid  = tune.grid,
+  verbose   = TRUE 
+)
+
+# make a prediction 
+unquoted.purchase.hat <- predict (model, newdata = test)
+#test [, unquoted.purchase.hat := predict (model, newdata = .SD) ]
+with (test, confusionMatrix (unquoted.purchase, unquoted.purchase.hat)) 
+
+# TODO - oversample where unquoted purchase is FALSE?
+
+```
+
+Which predictors are most important?
+
+```{r}
+varImp (model)
+
+#   only 20 most important variables shown (out of 43)
+# 
+#                    Overall
+# time.of.day.hours  100.000
+# cost                37.315
+# car.age             11.946
+# age.oldest           9.388
+# age.youngest         8.674
+# duration.previous    8.200
+# option.g3            5.801
+# option.g4            4.486
+# option.g2            4.421
+# option.d3            3.692
+# option.f2            2.626
+# option.e1            2.623
+# option.a2            2.574
+# option.a1            2.338
+# group.size           2.311
+# day.of.week^4        2.260
+# option.f1            2.083
+# option.c4            1.508
+# risk.factormissing   1.365
+# car.valuee           1.328
+```
+
+### Combining Models
+
+The naive model is relatively effective for the competition. Even the best competitors are beating it by only a few points. This indicates that in most cases customers purchase plans for which customers have previously (and most recently) received a quote. For these customers, the naive model might be the best model.
 
 Alternatively, there are other customers who will choose to purchase an unquoted plan. For these customers an alternative shopping or customer-based model should be used to improve accuracy.  This could be accomplished by ensembling the naive model with another model and have the ensemble model decide when each model should be applied.
 
-Lastly, there is a group of customers for which we have no shopping history.  For these customers we could use a purely customer based model.
+Lastly, there will be a group of customers for which we have no shopping history.  For these customers we could use a purely customer based model.  Is this true? 
+
+#### If/Else Combination
+
+The simplest way to combine models is to use the 'Unquoted Purchase' model.
+
+```{r}
+#
+# naive model - model requires no training data
+#
+test  <- fetch (train = FALSE)
+
+naive.models <- train.naive.model (test)
+naive.predictions <- predict.naive.model (naive.models, test)
+
+# extract the predictions
+setkey (naive.predictions, "customer.id")
+options.hat.as.numeric (naive.predictions)
+setnames (naive.predictions, options.hat(), paste0 (options.hat(), ".naive"))
+
+#
+# alpha shopping model
+#
+train <- fetch (train = TRUE)
+test  <- fetch (train = FALSE)
+
+train.shopping <- extract.shopping.history (train)
+train.shopping <- extract.purchase.history (train, train.shopping)
+
+#alpha.models <- cache ("train.alpha.models", train.alpha.model (data.shopping, verbose = TRUE))
+alpha.models <- train.alpha.model (data.shopping, verbose = TRUE)
+
+test.shopping <- extract.shopping.history (test)
+
+predict.alpha.model (alpha.models, test.shopping)
+
+# extract the predictions
+alpha.predictions <- test.shopping [, c("customer.id", options.hat()), with = FALSE]
+options.hat.as.numeric (alpha.predictions)
+setnames (alpha.predictions, options.hat(), paste0 (options.hat(), ".alpha"))
+
+#
+# unquoted purchase model 
+#
+train <- fetch (train = TRUE)
+test  <- fetch (train = FALSE)
+
+train <- preprocess.unquoted.model (train)
+unquoted.model <- cache ("train.unquoted.model", train.unquoted.model (train))
+
+test <- preprocess.unquoted.model (test, train = FALSE)
+predict.unquoted.model (unquoted.model, test)
+
+#unquoted.purchase.hat <- predict (unquoted.model, newdata = test)
+unquoted.predictions <- test [, list (customer.id, unquoted.purchase.hat) ]
+
+#
+# add the actuals for comparison
+#
+#data <- fetch (train = FALSE)
+#actuals <- data [record.type == "purchase", c("customer.id", options()), with = FALSE ]
+#options.as.numeric (actuals)
+
+# merge the predictions
+#predictions <- alpha.predictions [ naive.predictions ][ unquoted.predictions ][ actuals ]
+predictions <- alpha.predictions [ naive.predictions ][ unquoted.predictions ]
+
+# choose the alpha model only if the customer is likely to make an unquoted purchase
+predictions [, `:=` (
+  option.a.hat = ifelse (unquoted.purchase.hat == "TRUE" & !is.na (option.a.hat.alpha), 
+                         option.a.hat.alpha, option.a.hat.naive),
+  option.b.hat = ifelse (unquoted.purchase.hat == "TRUE" & !is.na (option.b.hat.alpha), 
+                         option.b.hat.alpha, option.b.hat.naive),
+  option.c.hat = ifelse (unquoted.purchase.hat == "TRUE" & !is.na (option.c.hat.alpha), 
+                         option.c.hat.alpha, option.c.hat.naive),
+  option.d.hat = ifelse (unquoted.purchase.hat == "TRUE" & !is.na (option.d.hat.alpha), 
+                         option.d.hat.alpha, option.d.hat.naive),
+  option.e.hat = ifelse (unquoted.purchase.hat == "TRUE" & !is.na (option.e.hat.alpha), 
+                         option.e.hat.alpha, option.e.hat.naive),
+  option.f.hat = ifelse (unquoted.purchase.hat == "TRUE" & !is.na (option.f.hat.alpha), 
+                         option.f.hat.alpha, option.f.hat.naive),
+  option.g.hat = ifelse (unquoted.purchase.hat == "TRUE" & !is.na (option.g.hat.alpha), 
+                         option.g.hat.alpha, option.g.hat.naive)
+  ), by = customer.id ] 
+             
+# score the results
+#accuracy.score (predictions)
+#partial.accuracy.score (predictions)
+
+create.submission (predictions, file = "../../submissions/red-swingline-predictions.csv")
 
 ```
+
+#### Model of Models 
+
+```
+
+# TODO - combine the predictions from both models and train a subsequent model that looks like...
+# option.a ~ <customer attributes> + ... + alpha.option.a.hat + naive.option.a.hat
+
   option.a ~ <customer attributes> 
     + alpha.model.option.a.hat
     + naive.model.option.a.hat
@@ -286,52 +442,6 @@ Lastly, there is a group of customers for which we have no shopping history.  Fo
     + <length of shopping history> 
 ```
 
-```{r}
-
-# fetch the data
-data <- fetch()
-add.plan (data)
-
-# split the customers into a training and test set
-customers <- unique (data$customer.id)
-customer.index <- sample (customers, 0.8 * length (customers))
-
-# split the competition training data set 
-train <- data [ customer.id %in%  customer.index ] 
-test  <- data [ customer.id %nin% customer.index ]
-
-#
-# naive model
-#
-
-# make predictions with the naive model
-# the model does not require training, hence it only uses the test data
-naive.models <- train.naive.model (test)
-naive.predictions <- predict.naive.model (naive.models, test)
-
-#
-# alpha model
-#
-
-# prepare the training data
-train.shopping <- extract.shopping.history (train)
-train.shopping <- extract.purchase.history (train, train.shopping)
-
-# train the models
-alpha.models <- cache ("train.alpha.models", 
-                        train.alpha.model (train.shopping, verbose = TRUE))
-
-# prepare the test data
-test.shopping <- extract.shopping.history (test)
-test.shopping <- extract.purchase.history (test, test.shopping)
-
-# predict the future
-predict.alpha.model (alpha.models, test.shopping)
-
-# TODO - combine the predictions from both models and train a subsequent model that looks like...
-# option.a ~ <customer attributes> + ... + alpha.option.a.hat + naive.option.a.hat
-
-```
 
 ### Recency of Shopping Points
 

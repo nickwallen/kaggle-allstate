@@ -129,6 +129,25 @@ options.as.numeric <- function (data) {
 }
 
 #
+# converts all of the options from factors to int/numerics
+#
+options.hat.as.numeric <- function (data) {
+  
+  data [, `:=` (
+    option.a.hat = as.numeric (as.character (option.a.hat)),
+    option.b.hat = as.numeric (as.character (option.b.hat)),
+    option.c.hat = as.numeric (as.character (option.c.hat)),
+    option.d.hat = as.numeric (as.character (option.d.hat)),
+    option.e.hat = as.numeric (as.character (option.e.hat)),
+    option.f.hat = as.numeric (as.character (option.f.hat)),
+    option.g.hat = as.numeric (as.character (option.g.hat))
+  )]
+  
+  # updates made in-place
+  return (NULL)
+}
+
+#
 # a feature which contains the shopping.pt value of the latest quote which matches
 # the customer's final purchase.  if the customer was never quoted for a purchase,
 # the value will be 0.
