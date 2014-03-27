@@ -365,10 +365,9 @@ train.shopping <- extract.shopping.history (train)
 train.shopping <- extract.purchase.history (train, train.shopping)
 
 #alpha.models <- cache ("train.alpha.models", train.alpha.model (data.shopping, verbose = TRUE))
-alpha.models <- train.alpha.model (data.shopping, verbose = TRUE)
+alpha.models <- train.alpha.model (train.shopping, verbose = TRUE)
 
 test.shopping <- extract.shopping.history (test)
-
 predict.alpha.model (alpha.models, test.shopping)
 
 # extract the predictions

@@ -67,10 +67,8 @@ train.unquoted.model <- function (data) {
     x         = data[, predictors, with = FALSE],
     y         = data [["unquoted.purchase"]],
     method    = "gbm", 
-    #trControl = trainControl (method = "cv", number = 2),
-    #tuneGrid  = tune.grid,
-    trControl = trainControl (method = "none"),
-    tuneGrid  = data.frame (n.trees = 200, shrinkage = 0.1, interaction.depth = 5),
+    trControl = trainControl (method = "cv", number = 2),
+    tuneGrid  = tune.grid,
     verbose   = TRUE 
   )
   
