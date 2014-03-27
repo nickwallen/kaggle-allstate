@@ -1,0 +1,33 @@
+```{r, include=FALSE}
+
+library (data.table)
+library (ggplot2)
+library (reshape2)
+library (lubridate)
+library (stringr)
+library (caret)
+library (gridExtra)
+
+source ("../R/fetch.R")
+source ("../R/features.R")
+source ("../R/score.R")
+source ("../R/utils.R")
+source ("../R/cache.R")
+
+# set global options for all code chunks
+opts_chunk$set(fig.width=12, fig.height=8, tidy=T)
+```
+
+
+
+```{r}
+
+train <- fetch (train = TRUE)
+
+# find only the latest quote for each customer
+quotes <- train [ record.type == "shopping" ]
+setkey (quotes, "shopping.pt")
+last.quote <- quotes [, .SD [ shopping.pt == which.max (shopping.pt) ], by = customer.id ]
+
+```
+
