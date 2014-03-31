@@ -245,3 +245,104 @@ add.last.quote <- function (data) {
   # updates made in-place
   return (NULL)
 }
+
+#
+# a young driver is anyone under 25
+#
+add.young.driver <- function (data) {
+  data [, young.driver := FALSE ]
+  data [ age.youngest < 25, young.driver := TRUE ]
+  data [, young.driver := as.factor (young.driver) ]
+  
+  # updates made in-place
+  return (NULL)
+}
+
+#
+# a senior driver is anyone over the age of 25
+#
+add.senior.driver <- function (data) {
+  data [, senior.driver := FALSE ]
+  data [ age.oldest > 65, senior.driver := TRUE ]  
+  data [, senior.driver := as.factor (senior.driver) ]
+  
+  # updates made in-place
+  return (NULL)
+}
+
+#
+# a teen driver is anyone 16-19 years of age
+#
+add.teen.driver <- function (data) {
+  data [, teen.driver := FALSE ]
+  data [ age.youngest < 20, teen.driver := TRUE ]
+  data [, teen.driver := as.factor (teen.driver) ]
+  
+  # updates made in-place
+  return (NULL)
+}
+
+#
+# indicates whether the customer is likely to have children
+#
+add.with.children <- function (data) {
+  data [, with.children := FALSE ]
+  data [ group.size > 2, with.children := TRUE ]
+  data [, with.children := as.factor (with.children)]
+}
+
+#
+# add the population density rank of the customer's home state
+#
+add.population.density <- function (data) {
+  
+  # fetch the population density data
+  density <- fread ("../../data/population-density.csv")
+  
+  # add the population density rank to the data  
+  setkey (density, "state")
+  setkey (data, "state")
+  data [density, pop.density.rank := rank]
+  
+  # updates made in-place
+  return (NULL)
+}
+
+#
+# insurers may be able to offer different rates, which might drive customers
+# to choose different options, based on the density of customers in a geographic
+# region
+#
+add.customer.density <- function (data) {
+  
+  density <- data [, .N, by = state]
+  density [, rank := rank (N) ]
+  
+  # add the customer density rank to the data
+  setkey (density, "state")
+  setkey (data, "state")
+  data [density, customer.density.rank := rank]
+  
+  # updates made in-place
+  return (NULL)
+}
+
+#
+# insurers may be able to offer different rates, which might drive customers
+# to choose different options, based on the density of customers in a geographic
+# region
+#
+add.customer.density.by.location <- function (data) {
+  
+  density <- data [, .N, by = location]
+  density [, rank := rank (N) ]
+  
+  # add the customer density rank to the data
+  setkey (density, "location")
+  setkey (data, "location")
+  data [density, customer.density.rank.by.location := rank]
+  
+  # updates made in-place
+  return (NULL)
+}
+

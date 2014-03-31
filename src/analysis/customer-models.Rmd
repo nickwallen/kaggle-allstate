@@ -28,11 +28,20 @@ train <- fetch (train = TRUE)
 latest.quote <- train [ record.type == "shopping", .SD [ which.max (shopping.pt) ], by = customer.id ]
 customers <- latest.quote [, c("customer.id", customer.attributes()), with = FALSE ]
 
+# additional features
+add.population.density (customers)
+add.senior.driver (customers)
+add.teen.driver (customers)
+add.young.driver (customers)
+add.with.children (customers)
+add.customer.density (customers)
+add.customer.density.by.location (customers)
+
 # append each customer's purchases
 extract.purchases (train, customers)
 
 # split the data for CV
-train.index <- sample (1:nrow (customers), .70 * nrow (customers))
+train.index <- sample (1:nrow (customers), .80 * nrow (customers))
 test  <- customers [ -train.index ]
 train <- customers [  train.index ]
 
@@ -44,17 +53,20 @@ tune.grid <- expand.grid (
 
 # fields used for predictions - kind of fugly
 predictors <- non.options (train) 
-predictors <- setdiff (predictors, c("customer.id", "location"))
+predictors <- setdiff (predictors, c("customer.id", "location", "state"))
+
+# remove any missing values before training
+train <- train [ complete.cases (train) ]
 
 # tune/train a separate model for each option
+#models <- lapply ("option.b", function (option) {
 models <- lapply (options(), function (option) {
   train (
     method    = "gbm", 
+    tuneGrid  = tune.grid,
     trControl = trainControl (method = "cv", number = 2),
     y         = train [[ option ]],
-    x         = train [, predictors, with = F],
-    tuneGrid  = tune.grid,
-    verbose   = "TRUE" )
+    x         = train [, predictors, with = F] )
   })
 
 # name each of the models in the list
