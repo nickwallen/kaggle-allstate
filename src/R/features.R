@@ -1,5 +1,72 @@
 
 #
+# extracts the purchase history for each customer from a source data set and then
+# merges it (appends columns) to a destination data set.
+#
+# there is always one, and only one, purchase record for each customer.  this 
+# record defines which options a customer actually purchased from AllState.  of 
+# course, the purchase records are available only in training data, not the test data.
+#
+extract.purchases <- function (src, dest, merge.by = "customer.id") {
+  
+  # which options does the shopper actually purchase?
+  purchase <- src [ record.type == "purchase", c("customer.id", options()), with = FALSE ]
+  if (nrow (purchase) == 0)
+    stop ("no purchase record(s) found.  these only exist in the training data.")
+  
+  # data table doesn't merge well with factors; the level names are lost
+  options.as.numeric (purchase)
+  
+  # merge the dest and purchase history
+  setkeyv (dest,     merge.by)
+  setkeyv (purchase, merge.by)
+  dest [ purchase, `:=` (option.a = option.a, 
+                         option.b = option.b, 
+                         option.c = option.c, 
+                         option.d = option.d, 
+                         option.e = option.e, 
+                         option.f = option.f, 
+                         option.g = option.g) ]
+  
+  # convert back to factors after the data is merged
+  options.as.factors (dest)
+  
+  return (dest)
+}
+
+#
+# extracts the 1 or more quotes that each customer has received from a 
+# source data set.  the function then 'flattens' the multiple quotes into a single 
+# record that summarizes that customer's quote history.
+#
+# the 'summarize.func' argument defines *how* multiple quotes are flattened 
+# into a single record.  the function can be changed to summarize the quote history 
+# in different ways.  additional arguments can be passed to the summarize 
+# function.  by default, the function simply sums the number of times a customer 
+# shopped for each option/selection {A0, A1, ..., B0, B1, ... }.
+#
+# each customer has received one or more quotes in the past before making a 
+# purchase.  each quote is enumerated via the 'shopping.pnt' field which indicates
+# the order in which the quotes were provided over time.  
+#
+extract.quotes <- function (data, summarize.func = sum, ...) {
+  require (caret)
+  
+  # extract only the shopping records
+  shopping <- data [record.type == "shopping"]
+  
+  # transform the options into dummy variables; option.a becomes (option.a0, option.a1, option.a2)
+  dummies <- dummyVars (~ option.a + option.b + option.c + option.d + option.e + option.f + option.g, shopping)
+  shopping <- data.table (customer.id = shopping$customer.id, predict (dummies, shopping))
+  
+  # summarize the options which were shopped for using summarize.func
+  shopping <- shopping [, lapply(.SD, summarize.func, ...), by = customer.id ]
+  setkey (shopping, "customer.id")
+  
+  return (shopping)
+}
+
+#
 # calculates the duration in days between a customer's first shopping 
 # contact and their last purchase contact. 
 #

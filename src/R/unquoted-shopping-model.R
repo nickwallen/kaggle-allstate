@@ -4,8 +4,8 @@
 #
 preprocess.unquoted.model <- function (data, train = TRUE) {
   
-  # extract the shopping history
-  shopping <- extract.shopping.history (data)
+  # extract the quotes aka shopping history
+  shopping <- extract.quotes (data)
   
   # extract attributes about each customer; use the first quote data only
   customers <- data [ shopping.pt == 1, list (

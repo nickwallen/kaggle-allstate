@@ -120,8 +120,8 @@ This model uses a classification tree to predict the final purchased option base
 
 # fetch the competition training data set and transform it for training
 data <- fetch()
-data.shopping <- extract.shopping.history (data, sum)
-data.shopping <- extract.purchase.history (data, data.shopping)
+data.shopping <- extract.quotes (data, sum)
+data.shopping <- extract.purchases (data, data.shopping)
 
 # split the data into representative test/train sets
 add.plan (data.shopping)
@@ -361,13 +361,13 @@ setnames (naive.predictions, options.hat(), paste0 (options.hat(), ".naive"))
 train <- fetch (train = TRUE)
 test  <- fetch (train = FALSE)
 
-train.shopping <- extract.shopping.history (train)
-train.shopping <- extract.purchase.history (train, train.shopping)
+train.shopping <- extract.quotes (train)
+train.shopping <- extract.purchases (train, train.shopping)
 
 #alpha.models <- cache ("train.alpha.models", train.alpha.model (data.shopping, verbose = TRUE))
 alpha.models <- train.alpha.model (train.shopping, verbose = TRUE)
 
-test.shopping <- extract.shopping.history (test)
+test.shopping <- extract.quotes (test)
 predict.alpha.model (alpha.models, test.shopping)
 
 # extract the predictions

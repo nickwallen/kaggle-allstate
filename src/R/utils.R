@@ -31,6 +31,16 @@ non.options <- function (data) {
 }
 
 #
+# simply returns the names of all fields that describe a customer such as age of
+# car, homeowner, risk factor, etc.
+#
+customer.attributes <- function () {
+  c ("state",        "location",       "group.size",        "homeowner", 
+     "car.age",      "car.value",      "risk.factor",       "age.oldest", 
+     "age.youngest", "married.couple", "duration.previous")
+}
+
+#
 # defines all of the valid 'levels' for each option
 #
 option.a.levels <- function () c(0, 1, 2)
