@@ -24,10 +24,51 @@ opts_chunk$set(fig.width=12, fig.height=8, tidy=T)
 
 train <- fetch (train = TRUE)
 
-# find only the latest quote for each customer
-quotes <- train [ record.type == "shopping" ]
-setkey (quotes, "shopping.pt")
-last.quote <- quotes [, .SD [ shopping.pt == which.max (shopping.pt) ], by = customer.id ]
+# extract a customer's attributes from the last quote they received
+latest.quote <- train [ record.type == "shopping", .SD [ which.max (shopping.pt) ], by = customer.id ]
+customers <- latest.quote [, c("customer.id", customer.attributes()), with = FALSE ]
+
+# append each customer's purchases
+extract.purchases (train, customers)
+
+# split the data for CV
+train.index <- sample (1:nrow (customers), .70 * nrow (customers))
+test  <- customers [ -train.index ]
+train <- customers [  train.index ]
+
+# which model parameters will be tuned?
+tune.grid <- expand.grid (
+  n.trees           = c(50, 100, 200), 
+  shrinkage         = 0.1,
+  interaction.depth = c(1, 5, 9))
+
+# fields used for predictions - kind of fugly
+predictors <- non.options (train) 
+predictors <- setdiff (predictors, c("customer.id", "location"))
+
+# tune/train a separate model for each option
+models <- lapply (options(), function (option) {
+  train (
+    method    = "gbm", 
+    trControl = trainControl (method = "cv", number = 2),
+    y         = train [[ option ]],
+    x         = train [, predictors, with = F],
+    tuneGrid  = tune.grid,
+    verbose   = "TRUE" )
+  })
+
+# name each of the models in the list
+names(models) <- options.hat()
+
+# make a prediction for each option [a-g] using the correct model
+for (option.hat in names (models)) {
+  m <- models [[option.hat]]
+  test [, option.hat := predict (m, .SD), .SDcols = predictors, with = FALSE ]
+}
+
+# score the results
+accuracy.score (test)
+partial.accuracy.score (test)
 
 ```
 
