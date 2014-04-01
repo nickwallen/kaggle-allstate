@@ -10,30 +10,31 @@ export.alpha.model <- function (summary.func = weighted.sum.most.recent,
                                 file         = "../../submissions/red-swingline-predictions-shopping.csv") {
   
   # fetch the competition training data set and transform it for training
-  data <- fetch ()
-  shopping.train <- extract.quotes (data, summary.func)
-  shopping.train <- extract.purchases (data, shopping.train)
+  raw <- fetch (train = TRUE)
+  train <- extract.quotes (raw, summary.func)
+  train <- extract.purchases (raw, train)
   
   # train the alpha model
-  models <- cache ("alpha-models", train.alpha.model(shopping.train))
+  models <- cache ("alpha-models", train.alpha.model(train))
   
   # transform the test data for prediction
-  shopping.test <- extract.quotes (fetch (train = FALSE), summary.func)
+  raw <- fetch (train = FALSE)
+  test <- extract.quotes (raw, summary.func)
   
   # make a prediction for each option [a-g] using the correct model
-  predict.alpha.model (models, shopping.test)
+  predict.alpha.model (models, test)
   
   # create a submission file that can be uploaded to kaggle
-  create.submission (shopping.test, file)
+  create.submission (test, file)
 }
 
 #
 # trains a separate model for each option.
 #
-train.alpha.model <- function (shopping.train, verbose = TRUE) {
+train.alpha.model <- function (train, verbose = TRUE) {
   
   # which model parameters will be tuned?
-  tune.grid <- expand.grid (
+  parameters <- expand.grid (
     n.trees           = c(50, 100, 200), 
     shrinkage         = 0.1,
     interaction.depth = c(1, 5, 9))
@@ -43,9 +44,9 @@ train.alpha.model <- function (shopping.train, verbose = TRUE) {
     train (
       method    = "gbm", 
       trControl = trainControl (method = "cv", number = 2),
-      y         = shopping.train [[ option ]],
-      x         = shopping.train [, 2:23, with = F],
-      tuneGrid  = tune.grid,
+      y         = train [[ option ]],
+      x         = train [, 2:23, with = F],
+      tuneGrid  = parameters,
       verbose   = verbose )
   })
   
