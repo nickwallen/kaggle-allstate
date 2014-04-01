@@ -361,9 +361,6 @@ add.customer.density.by.location <- function (data) {
 #
 add.cost.rank <- function (data, costs = fetch (train = TRUE)) {
   
-  #costs [, state = as.character (state)]
-  #data  [, state = as.character (state)]
-  
   # rank each state by the average cost
   cost.rank <- costs [, mean (cost), by = state]
   cost.rank <- cost.rank [, rank := rank (V1)]
@@ -390,3 +387,4 @@ expect.one.record.per.customer <- function (data) {
     stop ("epic fail! expect only 1 record per customer")
   }
 }
+
