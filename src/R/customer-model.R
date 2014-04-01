@@ -75,6 +75,8 @@ train.customer.model <- function (train) {
   
   # name each of the models in the list
   names(models) <- options.hat()
+  
+  return (models)
 }
 
 #
