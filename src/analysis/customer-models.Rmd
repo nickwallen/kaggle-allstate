@@ -13,6 +13,7 @@ source ("../R/features.R")
 source ("../R/score.R")
 source ("../R/utils.R")
 source ("../R/cache.R")
+source ("../R/customer-model.R")
 
 # set global options for all code chunks
 opts_chunk$set(fig.width=12, fig.height=8, tidy=T)

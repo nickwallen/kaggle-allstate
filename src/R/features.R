@@ -7,7 +7,7 @@
 # record defines which options a customer actually purchased from AllState.  of 
 # course, the purchase records are available only in training data, not the test data.
 #
-extract.purchases <- function (src, dest, merge.by = "customer.id") {
+extract.purchases <- function (src, dest, merge.by = c("customer.id")) {
   
   # which options does the shopper actually purchase?
   purchase <- src [ record.type == "purchase", c("customer.id", options()), with = FALSE ]
@@ -31,7 +31,8 @@ extract.purchases <- function (src, dest, merge.by = "customer.id") {
   # convert back to factors after the data is merged
   options.as.factors (dest)
   
-  return (dest)
+  # make explicit that the input data is modified in-place
+  return (NULL)
 }
 
 #
