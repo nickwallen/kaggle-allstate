@@ -7,13 +7,15 @@
 #
 export.customer.model <- function (file  = "../../submissions/red-swingline-predictions-customer.csv") {
   
-  # train the models and append the outcomes (each customer's purchase options)
-  data <- fetch (train = TRUE)
-  train <- preprocess.customer.model (data)
-  extract.purchases (data, train)
+  # prepare the data for training
+  raw <- fetch (train = TRUE)
+  train <- preprocess.customer.model (raw)
+  extract.purchases (raw, train)
+  
+  # train the models
   models <- train.customer.model (train)
   
-  # predict the future
+  # predict the future!
   test <- preprocess.customer.model (fetch (train = FALSE))
   predict.customer.model (models, test)
   create.submission (test, file)
@@ -26,13 +28,14 @@ preprocess.customer.model <- function (train) {
   customers <- latest.quote [, c("customer.id", customer.attributes()), with = FALSE ]
   
   # additional features
-  add.population.density (customers)
   add.senior.driver (customers)
   add.teen.driver (customers)
   add.young.driver (customers)
-  add.with.children (customers)
+  add.married.with.children (customers)
+  add.population.density (customers)
   add.customer.density (customers)
   add.customer.density.by.location (customers)
+  add.cost.rank (customers)
   
   return (customers)
 }
@@ -51,7 +54,7 @@ customer.model.predictors <- function (train) {
 train.customer.model <- function (train) {
  
   # remove any missing values before training
-  train <- train [ complete.cases (train) ]
+  #train <- train [ complete.cases (train) ]
   predictors <- customer.model.predictors (train)  
   
   # which model parameters will be tuned?

@@ -286,16 +286,17 @@ add.teen.driver <- function (data) {
 #
 # indicates whether the customer is likely to have children
 #
-add.with.children <- function (data) {
-  data [, with.children := FALSE ]
-  data [ group.size > 2, with.children := TRUE ]
-  data [, with.children := as.factor (with.children)]
+add.married.with.children <- function (data) {
+  data [, married.with.children := FALSE ]
+  data [  married.couple == "yes" & group.size > 2, married.with.children := TRUE ]
+  data [, married.with.children := as.factor (married.with.children)]
 }
 
 #
 # add the population density rank of the customer's home state
 #
 add.population.density <- function (data) {
+  expect.one.record.per.customer (data)
   
   # fetch the population density data
   density <- fread ("../../data/population-density.csv")
@@ -303,7 +304,7 @@ add.population.density <- function (data) {
   # add the population density rank to the data  
   setkey (density, "state")
   setkey (data, "state")
-  data [density, pop.density.rank := rank]
+  data [density, population.density.rank := rank]
   
   # updates made in-place
   return (NULL)
@@ -316,12 +317,16 @@ add.population.density <- function (data) {
 #
 add.customer.density <- function (data) {
   
+  # assertion
+  expect.one.record.per.customer (data)
+  
+  # rank each state by the number of customers
   density <- data [, .N, by = state]
   density [, rank := rank (N) ]
   
   # add the customer density rank to the data
-  setkey (density, "state")
   setkey (data, "state")
+  setkey (density, "state")
   data [density, customer.density.rank := rank]
   
   # updates made in-place
@@ -335,6 +340,10 @@ add.customer.density <- function (data) {
 #
 add.customer.density.by.location <- function (data) {
   
+  # assertion
+  expect.one.record.per.customer (data)
+  
+  # rank each location by the number of customers
   density <- data [, .N, by = location]
   density [, rank := rank (N) ]
   
@@ -347,3 +356,37 @@ add.customer.density.by.location <- function (data) {
   return (NULL)
 }
 
+#
+# rank each state by the average cost.  this rank is then added to the input data set.
+#
+add.cost.rank <- function (data, costs = fetch (train = TRUE)) {
+  
+  #costs [, state = as.character (state)]
+  #data  [, state = as.character (state)]
+  
+  # rank each state by the average cost
+  cost.rank <- costs [, mean (cost), by = state]
+  cost.rank <- cost.rank [, rank := rank (V1)]
+  
+  # add the customer density rank to the data
+  setkey (data, "state")
+  setkey (cost.rank, "state")
+  data [cost.rank, cost.rank := rank]
+  
+  # updates made in-place
+  return (NULL)
+}
+
+#
+# determines whether the data has only one record per customer or not.  returns
+# false if there is more than one record per customer.
+#
+expect.one.record.per.customer <- function (data) {
+
+  records.per.customer <- data [, .N, by = customer.id]
+  customers.with.multiple <- records.per.customer[N > 1]
+  
+  if (nrow (customers.with.multiple) > 0) {
+    stop ("epic fail! expect only 1 record per customer")
+  }
+}

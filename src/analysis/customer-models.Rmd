@@ -30,11 +30,11 @@ latest.quote <- train [ record.type == "shopping", .SD [ which.max (shopping.pt)
 customers <- latest.quote [, c("customer.id", customer.attributes()), with = FALSE ]
 
 # additional features
-add.population.density (customers)
 add.senior.driver (customers)
 add.teen.driver (customers)
 add.young.driver (customers)
-add.with.children (customers)
+add.married.with.children (customers)
+add.population.density (customers)
 add.customer.density (customers)
 add.customer.density.by.location (customers)
 
