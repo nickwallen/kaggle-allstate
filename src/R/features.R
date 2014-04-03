@@ -388,3 +388,29 @@ expect.one.record.per.customer <- function (data) {
   }
 }
 
+#
+# depreciates the value of the insured car based on its age.
+#
+add.depreciated.car.value <- function (data, depreciation.rate = 0.10, car.age.max = 10) {
+  
+  # extract the values for each car.value class
+  values <- fread ("../../data/car-values.csv")
+  cars <- data [, list (car.value, car.age) ]
+  
+  # merge the data sets
+  setkey (cars,   "car.value")
+  setkey (values, "car.value")
+  cars [ values, car.dollars := mid ]
+  
+  # depreciate the value of the car.... depreciation slows down, halts or maybe even reverses 
+  # after a certain age example: classic cars
+  cars [, car.dollars.deprec := car.dollars * (1 - depreciation.rate) ^ min (car.age, 10) ]
+  
+  setkey  (cars, "car.dollars")  
+  setkeyv (values, c("car.dollars","min"))
+  
+  cars [ values , roll = TRUE]
+  
+  # updates made in-place
+  return (NULL)
+}
