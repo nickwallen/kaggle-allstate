@@ -66,14 +66,18 @@ ratings <- as (ratings, "realRatingMatrix")
 # normalize the ratings - this should help account for bias caused by some shoppers who received more quotes
 #ratings <- normalize (ratings)
 
-# train a recommender
+# TODO - are 'goodRating' and 'given' parameters correct?
+
+# train 
 eval <- evaluationScheme (ratings, method = "split", train = 0.8, goodRating = 1, given = 1)
 recommender <- Recommender (getData (eval, "train"), method = "POPULAR")
 
-# predict the future
+# predict 
 p <- predict (recommender, getData (eval, "known"), type = "ratings")
 
-calcPredictionError (p, getData (eval, "unknown"))
+# TODO - choose the option with the maximum predicted rating
+
+# TODO - score
 
 ```
 
