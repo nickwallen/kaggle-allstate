@@ -1,0 +1,109 @@
+
+```{r, include = FALSE}
+
+library (recommenderlab)
+library (data.table)
+library (caret)
+library (stringr)
+
+source ("../R/fetch.R")
+source ("../R/features.R")
+source ("../R/score.R")
+source ("../R/utils.R")
+source ("../R/cache.R")
+source ("../R/customer-model.R")
+
+```
+
+Recommender
+========================================================
+
+Can user-based collaborative filtering help predict a customer's purchase?
+
+ - Item -> Plan Options
+ - User -> Customer
+ - User Attributes -> State, Location, Car Age, etc, etc
+ - Ratings -> The number of times a user shopped for a particular option. A user's actual purchase might be weighted to indicate a much higher rating.
+
+The available recommenders.
+
+```{r}
+recommenderRegistry$get_entries (dataType = "realRatingMatrix")
+```
+
+
+```{r}
+
+#
+# load the raw data
+#
+
+# if a user has shopping for an option N times this counts as a +N rating
+raw <- fetch ()
+quotes <- extract.quotes (raw, sum)
+extract.purchases (raw, quotes)
+
+#
+# focus only on option a for now
+#
+
+# the columns specific to the option being analyzed; option a in this case
+keep.columns <- c("customer.id", na.omit (str_match (names (quotes), "option\\.a.*")))
+quotes <- quotes [, keep.columns, with = FALSE]
+
+#
+# create the ratings matrix
+#
+
+# extract the ratings matrix from the data
+ratings <- as.matrix (subset (quotes, select = 2:(ncol (quotes)-1)))
+rownames (ratings) <- quotes$customer.id
+
+# the recommende expects NA to indicate "no rating".  all 0s need to be replaced NA
+#ratings [ratings == 0] <- NA
+ratings <- as (ratings, "realRatingMatrix")
+
+# normalize the ratings - this should help account for bias caused by some shoppers who received more quotes
+#ratings <- normalize (ratings)
+
+# train a recommender
+eval <- evaluationScheme (ratings, method = "split", train = 0.8, goodRating = 1, given = 1)
+recommender <- Recommender (getData (eval, "train"), method = "POPULAR")
+
+# predict the future
+p <- predict (recommender, getData (eval, "known"), type = "ratings")
+
+calcPredictionError (p, getData (eval, "unknown"))
+
+```
+
+If we can use purchases data from the training set, we might weight that more heavily and it would look something like the following.  I don't think there will be any training with this approach though.
+
+```{r}
+
+# extract pseudo-ratings from the purchase data
+purchases <- raw [ record.type == "purchase" ]
+
+# transform the options into dummy variables; option.a becomes (option.a0, option.a1, option.a2)
+dummies <- dummyVars (~ option.a + option.b + option.c + option.d + option.e + option.f + option.g, purchases)
+purchases <- data.table (customer.id = purchases$customer.id, predict (dummies, purchases))
+
+# summarize the options which were shopped for using summarize.func
+purchases <- purchases [, lapply(.SD, summarize.func, ...), by = customer.id ]
+setkey (purchases, "customer.id")
+
+# if a user has purchased an option this counts as a +5 rating
+purchases <- purchases [, keep.columns, with = FALSE ]
+
+option.columns <- keep.columns [2:length(keep.columns)]
+options.only <- purchases [, option.columns, with = FALSE]
+
+purchase.weight <- 5
+options.only <- options.only * purchase.weight
+
+# TODO - add back the customer id and convert back to data table
+
+```
+
+
+
